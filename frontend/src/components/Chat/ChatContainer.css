@@ -1,0 +1,38 @@
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #1976d2;
+  color: white;
+}
+
+.chat-header h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.connection-status {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.connection-status.connected {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.connection-status.disconnected {
+  background: rgba(255, 193, 7, 0.3);
+}

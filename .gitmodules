@@ -1,0 +1,3 @@
+[submodule "libs/a2ui"]
+	path = libs/a2ui
+	url = https://github.com/google/a2ui.git
