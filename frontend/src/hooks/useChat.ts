@@ -4,30 +4,36 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useWebSocket } from "./useWebSocket";
+import { useA2UI } from "./useA2UI";
 import type { ChatMessage, A2UIMessage, UserActionMessage } from "../types/a2ui";
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const { isConnected, send, onMessage } = useWebSocket();
+  const a2ui = useA2UI();
 
   // 메시지 수신 처리
   useEffect(() => {
     const unsubscribe = onMessage((message: unknown) => {
       const a2uiMessage = message as A2UIMessage;
 
-      // A2UI 메시지를 채팅 메시지로 변환
-      const chatMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        type: "ui",
-        a2ui: a2uiMessage,
-        timestamp: new Date(),
-      };
+      // A2UI 메시지 처리
+      a2ui.processMessage(a2uiMessage);
 
-      setMessages((prev) => [...prev, chatMessage]);
+      // 채팅 히스토리에 추가 (updateDataModel은 제외)
+      if (!("updateDataModel" in a2uiMessage)) {
+        const chatMessage: ChatMessage = {
+          id: crypto.randomUUID(),
+          type: "ui",
+          a2ui: a2uiMessage,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, chatMessage]);
+      }
     });
 
     return unsubscribe;
-  }, [onMessage]);
+  }, [onMessage, a2ui]);
 
   // 텍스트 메시지 전송
   const sendMessage = useCallback(
@@ -68,5 +74,6 @@ export function useChat() {
     isConnected,
     sendMessage,
     sendAction,
+    a2ui,
   };
 }

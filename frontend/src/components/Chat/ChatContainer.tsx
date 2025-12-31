@@ -4,11 +4,11 @@
 
 import { useChat } from "../../hooks/useChat";
 import { ChatInput } from "./ChatInput";
-import { MessageList } from "./MessageList";
+import { A2UISurfaceView } from "./A2UISurfaceView";
 import "./ChatContainer.css";
 
 export function ChatContainer() {
-  const { messages, isConnected, sendMessage, sendAction } = useChat();
+  const { messages, isConnected, sendMessage, sendAction, a2ui } = useChat();
 
   return (
     <div className="chat-container">
@@ -19,7 +19,21 @@ export function ChatContainer() {
         </span>
       </header>
 
-      <MessageList messages={messages} onAction={sendAction} />
+      <div className="chat-content">
+        {/* 사용자 메시지 히스토리 */}
+        <div className="user-messages">
+          {messages
+            .filter((m) => m.type === "user")
+            .map((m) => (
+              <div key={m.id} className="user-message">
+                {m.content}
+              </div>
+            ))}
+        </div>
+
+        {/* A2UI Surface 렌더링 */}
+        <A2UISurfaceView a2ui={a2ui} onAction={sendAction} />
+      </div>
 
       <ChatInput onSend={sendMessage} disabled={!isConnected} />
     </div>
