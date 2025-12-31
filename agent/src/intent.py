@@ -1,62 +1,60 @@
-"""의도 분석 모듈 - LLM 기반 사용자 의도 파악"""
+"""의도 분석 모듈 - GPT 기반 사용자 의도 파악"""
 
 import os
-import google.generativeai as genai
+import json
+from openai import OpenAI
 
 
 class IntentAnalyzer:
     """사용자 입력에서 의도를 분석"""
 
     def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("OPENAI_API_KEY")
         if api_key:
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel("gemini-1.5-flash")
+            self.client = OpenAI(api_key=api_key)
         else:
-            self.model = None
+            self.client = None
 
     async def analyze(self, text: str) -> dict:
         """텍스트에서 여행 관련 의도 분석"""
-        if not self.model:
+        if not self.client:
             # API 키 없으면 키워드 기반 분석
             return self._keyword_based_analysis(text)
 
-        prompt = f"""
-        사용자의 여행 관련 요청을 분석하세요.
+        prompt = """사용자의 여행 관련 요청을 분석하세요.
 
-        사용자 입력: "{text}"
+다음 중 하나의 의도를 JSON으로 반환하세요:
+- flight: 항공권 예약
+- hotel: 호텔 예약
+- car: 렌터카 예약
+- package: 패키지 여행
+- unknown: 파악 불가
 
-        다음 중 하나의 의도를 JSON으로 반환하세요:
-        - flight: 항공권 예약
-        - hotel: 호텔 예약
-        - car: 렌터카 예약
-        - package: 패키지 여행
-        - unknown: 파악 불가
+추출 가능한 정보도 포함하세요:
+- destination: 목적지
+- departure: 출발지
+- date: 날짜
+- passengers: 인원
 
-        추출 가능한 정보도 포함하세요:
-        - destination: 목적지
-        - departure: 출발지
-        - date: 날짜
-        - passengers: 인원
-
-        예시 응답:
-        {{"type": "flight", "destination": "제주", "departure": "서울"}}
-        """
+JSON만 반환하세요. 예시:
+{"type": "flight", "destination": "제주", "departure": "서울"}"""
 
         try:
-            response = await self.model.generate_content_async(prompt)
-            # 응답 파싱 (간단한 JSON 추출)
-            import json
-            text_response = response.text
-            # JSON 부분만 추출
-            start = text_response.find("{")
-            end = text_response.rfind("}") + 1
-            if start != -1 and end > start:
-                return json.loads(text_response[start:end])
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": text}
+                ],
+                response_format={"type": "json_object"}
+            )
+
+            result = response.choices[0].message.content
+            return json.loads(result)
+
         except Exception as e:
             print(f"Intent analysis error: {e}")
-
-        return self._keyword_based_analysis(text)
+            return self._keyword_based_analysis(text)
 
     def _keyword_based_analysis(self, text: str) -> dict:
         """키워드 기반 간단한 의도 분석 (폴백)"""
