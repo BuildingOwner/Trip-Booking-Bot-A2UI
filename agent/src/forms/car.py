@@ -33,7 +33,7 @@ class CarFormGenerator(BaseFormGenerator):
             {
                 "id": "root",
                 "component": "Column",
-                "children": ["header", "same-location", "pickup", "dropoff", "dates", "car-type", "actions"]
+                "children": ["header", "same-location", "pickup", "dropoff", "dates", "car-type", "insurance", "options", "actions"]
             },
             {
                 "id": "header",
@@ -100,6 +100,29 @@ class CarFormGenerator(BaseFormGenerator):
                 "binding": "/car/type"
             },
             {
+                "id": "insurance",
+                "component": "CheckboxGroup",
+                "label": "보험",
+                "options": [
+                    {"value": "basic", "label": "기본 보험 (자차)"},
+                    {"value": "full", "label": "완전 자차 보험"},
+                    {"value": "super", "label": "슈퍼 보험 (면책금 0원)"}
+                ],
+                "binding": "/car/insurance"
+            },
+            {
+                "id": "options",
+                "component": "CheckboxGroup",
+                "label": "추가 옵션",
+                "options": [
+                    {"value": "gps", "label": "GPS 네비게이션"},
+                    {"value": "childseat", "label": "유아용 카시트"},
+                    {"value": "wifi", "label": "와이파이"},
+                    {"value": "etc", "label": "하이패스 단말기"}
+                ],
+                "binding": "/car/options"
+            },
+            {
                 "id": "actions",
                 "component": "Row",
                 "children": ["back-btn", "search-btn"]
@@ -135,7 +158,9 @@ class CarFormGenerator(BaseFormGenerator):
                     "dropoffLocation": "",
                     "pickupDateTime": pickup_date,
                     "dropoffDateTime": dropoff_date,
-                    "type": "mid"
+                    "type": "mid",
+                    "insurance": [],
+                    "options": []
                 }
             },
             {

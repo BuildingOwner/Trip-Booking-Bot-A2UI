@@ -6,6 +6,40 @@ from ..graph.state import TravelState
 from ..forms import get_form_generator
 
 
+# 도시명 → 코드 매핑 (ChoicePicker value 변환용)
+CITY_CODE_MAP = {
+    "서울": "SEL", "부산": "PUS", "제주": "CJU",
+    "도쿄": "TYO", "오사카": "OSA", "후쿠오카": "FUK",
+    "방콕": "BKK", "호치민": "SGN", "하노이": "HAN",
+    "싱가포르": "SIN", "홍콩": "HKG",
+}
+
+# 공항 코드 매핑
+AIRPORT_CODE_MAP = {
+    "인천": "ICN", "김포": "GMP", "제주": "CJU", "부산": "PUS", "김해": "PUS",
+    "나리타": "NRT", "하네다": "HND", "간사이": "KIX", "후쿠오카": "FUK",
+    "방콕": "BKK", "싱가포르": "SIN", "홍콩": "HKG",
+}
+
+
+def _convert_entity_codes(entities: dict, intent_type: str) -> dict:
+    """도시명/공항명을 코드로 변환"""
+    converted = dict(entities)
+
+    if intent_type == "hotel":
+        # 호텔: arrival → 도시 코드
+        if "arrival" in converted and isinstance(converted["arrival"], str):
+            converted["arrival"] = CITY_CODE_MAP.get(converted["arrival"], converted["arrival"])
+    else:
+        # 항공권/렌터카: arrival, departure → 공항 코드
+        if "arrival" in converted and isinstance(converted["arrival"], str):
+            converted["arrival"] = AIRPORT_CODE_MAP.get(converted["arrival"], converted["arrival"])
+        if "departure" in converted and isinstance(converted["departure"], str):
+            converted["departure"] = AIRPORT_CODE_MAP.get(converted["departure"], converted["departure"])
+
+    return converted
+
+
 def _merge_entities_with_current_data(current_data: dict, entities: dict, intent_type: str) -> dict:
     """기존 폼 데이터에 새로 추출한 entities를 병합
 
@@ -42,8 +76,11 @@ def form_generator_node(state: TravelState) -> TravelState:
     current_data = state.get("current_data", {})
     current_surface_id = state.get("current_surface_id", "")
 
+    # 도시명/공항명 → 코드 변환
+    converted_entities = _convert_entity_codes(entities, intent_type)
+
     # 기존 폼 데이터가 있으면 병합
-    merged_entities = _merge_entities_with_current_data(current_data, entities, intent_type)
+    merged_entities = _merge_entities_with_current_data(current_data, converted_entities, intent_type)
 
     # 폼 업데이트인지 새 폼인지에 따라 메시지 분기
     is_update = bool(current_data and current_data.get(intent_type))

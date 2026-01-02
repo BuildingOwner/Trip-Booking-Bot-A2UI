@@ -281,6 +281,57 @@ function ComponentRenderer({ component, surface, onAction, onValueChange }: Comp
         </div>
       );
 
+    case "CheckboxGroup": {
+      const options = getOptions();
+      const selectedValues = (getBoundValue(component.binding) as string[]) || [];
+
+      const toggleOption = (value: string) => {
+        const newValues = selectedValues.includes(value)
+          ? selectedValues.filter(v => v !== value)
+          : [...selectedValues, value];
+        handleChange(newValues);
+      };
+
+      return (
+        <div className="a2ui-checkbox-group">
+          {component.label && <label className="a2ui-checkbox-group-label">{component.label}</label>}
+          <div className="a2ui-checkbox-group-options">
+            {options.map((opt) => (
+              <label key={opt.value} className="a2ui-checkbox-option">
+                <input
+                  type="checkbox"
+                  checked={selectedValues.includes(opt.value)}
+                  onChange={() => toggleOption(opt.value)}
+                />
+                <span>{opt.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    case "List": {
+      const items = (getBoundValue(component.binding) as Array<Record<string, unknown>>) || [];
+      const template = component.itemTemplate || "default";
+
+      return (
+        <div className="a2ui-list">
+          {items.map((item, index) => (
+            <ResultCard
+              key={item.id as string || index}
+              item={item}
+              template={template}
+              onSelect={() => onAction(surfaceId, component.id, `select-item-${item.id}`, dataModel)}
+            />
+          ))}
+          {items.length === 0 && (
+            <div className="a2ui-list-empty">검색 결과가 없습니다.</div>
+          )}
+        </div>
+      );
+    }
+
     default:
       return <div className="a2ui-unknown">Unknown: {component.component}</div>;
   }
@@ -345,4 +396,108 @@ function getIconEmoji(icon?: string): string {
     "check-circle": "✅",
   };
   return icons[icon || ""] || "•";
+}
+
+/**
+ * 검색 결과 카드 컴포넌트
+ */
+interface ResultCardProps {
+  item: Record<string, unknown>;
+  template: string;
+  onSelect: () => void;
+}
+
+function ResultCard({ item, template, onSelect }: ResultCardProps) {
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('ko-KR').format(price) + '원';
+  };
+
+  // 항공편 카드
+  if (template === "flight-card") {
+    return (
+      <div className="a2ui-result-card flight-card" onClick={onSelect}>
+        <div className="result-card-header">
+          <span className="airline">{item.airline as string}</span>
+          <span className="flight-no">{item.flightNo as string}</span>
+        </div>
+        <div className="result-card-body">
+          <div className="flight-route">
+            <div className="departure">
+              <span className="time">{item.departureTime as string}</span>
+              <span className="airport">{item.departure as string}</span>
+            </div>
+            <div className="flight-duration">
+              <span className="duration">{item.duration as string}</span>
+              <div className="flight-line">✈️</div>
+            </div>
+            <div className="arrival">
+              <span className="time">{item.arrivalTime as string}</span>
+              <span className="airport">{item.arrival as string}</span>
+            </div>
+          </div>
+        </div>
+        <div className="result-card-footer">
+          <span className="price">{formatPrice(item.price as number)}</span>
+          <button className="select-btn">선택</button>
+        </div>
+      </div>
+    );
+  }
+
+  // 호텔 카드
+  if (template === "hotel-card") {
+    const amenities = (item.amenities as string[]) || [];
+    return (
+      <div className="a2ui-result-card hotel-card" onClick={onSelect}>
+        <div className="result-card-header">
+          <span className="hotel-name">{item.name as string}</span>
+          <span className="rating">⭐ {item.rating as number}</span>
+        </div>
+        <div className="result-card-body">
+          <div className="hotel-location">📍 {item.location as string}</div>
+          <div className="hotel-amenities">
+            {amenities.slice(0, 3).map((amenity, idx) => (
+              <span key={idx} className="amenity-tag">{amenity}</span>
+            ))}
+          </div>
+        </div>
+        <div className="result-card-footer">
+          <span className="price">{formatPrice(item.pricePerNight as number)}<small>/박</small></span>
+          <button className="select-btn">선택</button>
+        </div>
+      </div>
+    );
+  }
+
+  // 렌터카 카드
+  if (template === "car-card") {
+    const features = (item.features as string[]) || [];
+    return (
+      <div className="a2ui-result-card car-card" onClick={onSelect}>
+        <div className="result-card-header">
+          <span className="car-model">{item.model as string}</span>
+          <span className="car-type">{item.type as string}</span>
+        </div>
+        <div className="result-card-body">
+          <div className="car-company">🚗 {item.company as string}</div>
+          <div className="car-features">
+            {features.slice(0, 3).map((feature, idx) => (
+              <span key={idx} className="feature-tag">{feature}</span>
+            ))}
+          </div>
+        </div>
+        <div className="result-card-footer">
+          <span className="price">{formatPrice(item.pricePerDay as number)}<small>/일</small></span>
+          <button className="select-btn">선택</button>
+        </div>
+      </div>
+    );
+  }
+
+  // 기본 카드
+  return (
+    <div className="a2ui-result-card" onClick={onSelect}>
+      <pre>{JSON.stringify(item, null, 2)}</pre>
+    </div>
+  );
 }

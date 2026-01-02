@@ -182,23 +182,12 @@ export function useA2UI() {
   );
 
   /**
-   * 활성 Surface 닫기
+   * 모든 Surface 닫기 (X 버튼 클릭 시)
    */
   const closeActiveSurface = useCallback(() => {
-    setState((prev) => {
-      if (!prev.activeSurfaceId) return prev;
-
-      const newSurfaces = new Map(prev.surfaces);
-      newSurfaces.delete(prev.activeSurfaceId);
-
-      // 다른 surface가 있으면 그것을 활성화
-      const remaining = Array.from(newSurfaces.keys());
-      const newActiveSurfaceId = remaining.length > 0 ? remaining[remaining.length - 1] : null;
-
-      return {
-        surfaces: newSurfaces,
-        activeSurfaceId: newActiveSurfaceId,
-      };
+    setState({
+      surfaces: new Map(),
+      activeSurfaceId: null,
     });
   }, []);
 

@@ -25,29 +25,53 @@ INTENT_PROMPT = """당신은 여행 예약/검색 의도 분석기입니다. 사
 - 그 외: type: "unknown"
 
 ## 엔티티 추출 (있는 경우만)
+### 공통
 - departure: 출발지 (도시명 또는 공항코드)
-- arrival: 도착지/목적지
-- departureDate: 출발일/체크인 (YYYY-MM-DD 형식)
-- returnDate: 귀국일/체크아웃 (YYYY-MM-DD 형식)
-- tripType: 왕복이면 "roundtrip", 편도면 "oneway"
+- arrival: 도착지/목적지/도시
+- departureDate: 출발일/체크인/픽업일 (YYYY-MM-DD 형식)
+- returnDate: 귀국일/체크아웃/반납일 (YYYY-MM-DD 형식)
 - adults: 성인 수 (숫자)
 - children: 아동 수 (숫자)
+
+### 항공권 전용
+- tripType: 왕복이면 "roundtrip", 편도면 "oneway"
+- infants: 유아 수 (숫자)
 - class: 좌석 등급 ("economy", "business", "first")
 
-## modify 타입 전용 엔티티 (폼 수정 시)
-- modifyField: 변경할 필드명 (departure, arrival, departureDate, returnDate, tripType, adults, children, infants, class 중 하나)
-- modifyValue: 변경할 값
+### 호텔 전용
+- rooms: 객실 수 (숫자)
+- breakfast: 조식 포함 여부 (true/false)
+
+### 렌터카 전용
+- carType: 차종 ("compact"=경형/소형, "mid"=중형, "full"=대형, "suv"=SUV, "van"=승합, "luxury"=고급)
+- insurance: 보험 배열 (["basic"=기본자차, "full"=완전자차, "super"=슈퍼보험])
+- options: 추가옵션 배열 (["gps"=네비게이션, "childseat"=카시트, "wifi"=와이파이, "etc"=하이패스])
+- pickupLocation: 픽업 장소
+
+## modify 타입 규칙 (폼 수정 시)
+**중요**: 활성 폼이 있고 사용자가 값을 변경하려 할 때 modify 타입 사용
+- 여러 필드를 동시에 변경하는 경우: 각 필드를 직접 추출 (departureDate, returnDate, carType 등)
+- 단일 필드만 변경하는 경우: modifyField/modifyValue 사용 가능
+
+예시 (렌터카 폼이 활성화된 상태):
+- "인천공항에서 1월 8일부터 11일까지 소형차로 완전자차에 네비 추가"
+  → {{"type": "modify", "entities": {{"pickupLocation": "ICN", "departureDate": "2026-01-08", "returnDate": "2026-01-11", "carType": "compact", "insurance": ["full"], "options": ["gps"]}}}}
+- "픽업 장소를 김포로 바꿔줘"
+  → {{"type": "modify", "entities": {{"pickupLocation": "GMP"}}}}
 
 ### 필드 매핑 (사용자 표현 → modifyField)
 - "출발지", "출발", "떠나는 곳" → departure
-- "도착지", "목적지", "가는 곳" → arrival
-- "출발일", "가는 날", "떠나는 날" → departureDate
-- "귀국일", "돌아오는 날", "복귀일" → returnDate
+- "도착지", "목적지", "가는 곳", "도시" → arrival
+- "출발일", "가는 날", "떠나는 날", "체크인" → departureDate
+- "귀국일", "돌아오는 날", "복귀일", "체크아웃" → returnDate
 - "왕복", "편도" → tripType
 - "성인", "어른" → adults
 - "아동", "어린이", "아이" → children
 - "유아", "영아", "애기", "아기" → infants
 - "좌석", "좌석등급", "클래스" → class
+- "객실", "방" → rooms
+- "조식", "아침" → breakfast
+- "차종", "차량" → carType
 
 ### 값 매핑 (사용자 표현 → modifyValue)
 - "비즈니스", "비지니스" → business
@@ -63,7 +87,7 @@ INTENT_PROMPT = """당신은 여행 예약/검색 의도 분석기입니다. 사
 
 ## 응답 형식 (JSON)
 반드시 아래 형식의 JSON만 출력하세요:
-{{"type": "flight|hotel|car|package|modify|unknown", "entities": {{"departure": "출발지 또는 null", "arrival": "도착지 또는 null", "departureDate": "YYYY-MM-DD 또는 null", "returnDate": "YYYY-MM-DD 또는 null", "tripType": "roundtrip|oneway 또는 null", "adults": 숫자 또는 null, "children": 숫자 또는 null, "infants": 숫자 또는 null, "class": "economy|business|first 또는 null", "modifyField": "필드명 또는 null", "modifyValue": "변경값 또는 null"}}}}
+{{"type": "flight|hotel|car|package|modify|unknown", "entities": {{"departure": "출발지 또는 null", "arrival": "도착지/도시 또는 null", "departureDate": "YYYY-MM-DD 또는 null", "returnDate": "YYYY-MM-DD 또는 null", "tripType": "roundtrip|oneway 또는 null", "adults": 숫자 또는 null, "children": 숫자 또는 null, "infants": 숫자 또는 null, "class": "economy|business|first 또는 null", "rooms": 숫자 또는 null, "breakfast": true|false 또는 null, "carType": "차종 또는 null", "insurance": ["basic","full","super"] 또는 null, "options": ["gps","childseat","wifi","etc"] 또는 null, "pickupLocation": "픽업장소 또는 null", "modifyField": "필드명 또는 null", "modifyValue": "변경값 또는 null"}}}}
 
 ## 현재 날짜 정보
 오늘 날짜: {today}

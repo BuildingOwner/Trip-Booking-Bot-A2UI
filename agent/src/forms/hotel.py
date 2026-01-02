@@ -33,7 +33,7 @@ class HotelFormGenerator(BaseFormGenerator):
             {
                 "id": "root",
                 "component": "Column",
-                "children": ["header", "destination", "dates", "rooms", "guests", "actions"]
+                "children": ["header", "destination", "dates", "rooms", "guests", "options", "actions"]
             },
             {
                 "id": "header",
@@ -43,11 +43,11 @@ class HotelFormGenerator(BaseFormGenerator):
             },
             {
                 "id": "destination",
-                "component": "TextField",
-                "label": "목적지",
-                "hint": "도시, 지역 또는 호텔명",
+                "component": "ChoicePicker",
+                "label": "도시",
+                "options": "/cities",
                 "binding": "/hotel/destination",
-                "icon": "search"
+                "searchable": True
             },
             {
                 "id": "dates",
@@ -100,6 +100,12 @@ class HotelFormGenerator(BaseFormGenerator):
                 "binding": "/hotel/guests/children"
             },
             {
+                "id": "options",
+                "component": "CheckBox",
+                "label": "조식 포함",
+                "binding": "/hotel/breakfast"
+            },
+            {
                 "id": "actions",
                 "component": "Row",
                 "children": ["back-btn", "search-btn"]
@@ -127,6 +133,8 @@ class HotelFormGenerator(BaseFormGenerator):
         checkout_date = entities.get("returnDate", "")
         adults = entities.get("adults", 2)
         children = entities.get("children", 0)
+        rooms = entities.get("rooms", 1)
+        breakfast = entities.get("breakfast", False)
 
         return [
             {
@@ -136,11 +144,29 @@ class HotelFormGenerator(BaseFormGenerator):
                     "destination": destination,
                     "checkinDate": checkin_date,
                     "checkoutDate": checkout_date,
-                    "rooms": 1,
+                    "rooms": rooms if isinstance(rooms, int) else 1,
                     "guests": {
                         "adults": adults if isinstance(adults, int) else 2,
                         "children": children if isinstance(children, int) else 0
-                    }
+                    },
+                    "breakfast": breakfast if isinstance(breakfast, bool) else False
                 }
+            },
+            {
+                "op": "add",
+                "path": "/cities",
+                "value": [
+                    {"value": "SEL", "label": "서울"},
+                    {"value": "PUS", "label": "부산"},
+                    {"value": "CJU", "label": "제주"},
+                    {"value": "TYO", "label": "도쿄"},
+                    {"value": "OSA", "label": "오사카"},
+                    {"value": "FUK", "label": "후쿠오카"},
+                    {"value": "BKK", "label": "방콕"},
+                    {"value": "SGN", "label": "호치민"},
+                    {"value": "HAN", "label": "하노이"},
+                    {"value": "SIN", "label": "싱가포르"},
+                    {"value": "HKG", "label": "홍콩"}
+                ]
             }
         ]
