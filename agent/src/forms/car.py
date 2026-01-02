@@ -1,5 +1,6 @@
 """렌터카 예약 폼 생성기"""
 
+from typing import Optional
 from .base import BaseFormGenerator
 
 
@@ -8,8 +9,10 @@ class CarFormGenerator(BaseFormGenerator):
 
     SURFACE_ID = "car-rental"
 
-    def generate(self) -> list[dict]:
+    def generate(self, entities: Optional[dict] = None) -> list[dict]:
         messages = []
+        entities = entities or {}
+
         messages.append(self.create_surface(self.SURFACE_ID))
         messages.append({
             "updateComponents": {
@@ -20,7 +23,7 @@ class CarFormGenerator(BaseFormGenerator):
         messages.append({
             "updateDataModel": {
                 "surfaceId": self.SURFACE_ID,
-                "operations": self._get_initial_data()
+                "operations": self._get_initial_data(entities)
             }
         })
         return messages
@@ -117,7 +120,11 @@ class CarFormGenerator(BaseFormGenerator):
             }
         ]
 
-    def _get_initial_data(self) -> list[dict]:
+    def _get_initial_data(self, entities: dict) -> list[dict]:
+        # entities에서 값 추출
+        pickup_date = entities.get("departureDate", "")
+        dropoff_date = entities.get("returnDate", "")
+
         return [
             {
                 "op": "add",
@@ -126,8 +133,8 @@ class CarFormGenerator(BaseFormGenerator):
                     "sameLocation": True,
                     "pickupLocation": "",
                     "dropoffLocation": "",
-                    "pickupDateTime": "",
-                    "dropoffDateTime": "",
+                    "pickupDateTime": pickup_date,
+                    "dropoffDateTime": dropoff_date,
                     "type": "mid"
                 }
             },

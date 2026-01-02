@@ -141,8 +141,16 @@ function ComponentRenderer({ component, surface, onAction, onValueChange }: Comp
       );
 
     case "ChoicePicker": {
-      const options = getOptions();
+      const rawOptions = getOptions();
       const currentValue = getBoundValue(component.binding) as string;
+
+      // excludeBinding이 있으면 해당 값과 같은 옵션 제외
+      const excludeValue = component.excludeBinding
+        ? getBoundValue(component.excludeBinding)
+        : undefined;
+      const options = excludeValue
+        ? rawOptions.filter((opt) => opt.value !== excludeValue)
+        : rawOptions;
 
       // mode가 single이고 options이 2개면 라디오 버튼 스타일
       if (component.mode === "single" && options.length <= 3) {
@@ -185,17 +193,41 @@ function ComponentRenderer({ component, surface, onAction, onValueChange }: Comp
       );
     }
 
-    case "DateTimeInput":
+    case "DateTimeInput": {
+      // minDate 처리: "today" 또는 경로 참조
+      const getMinDate = (): string | undefined => {
+        if (!component.minDate) return undefined;
+        if (component.minDate === "today") {
+          return new Date().toISOString().split("T")[0];
+        }
+        // 경로 참조 (예: "/flight/departureDate")
+        const value = getBoundValue(component.minDate);
+        return typeof value === "string" && value ? value : undefined;
+      };
+
+      // maxDate 처리
+      const getMaxDate = (): string | undefined => {
+        if (!component.maxDate) return undefined;
+        if (component.maxDate === "today") {
+          return new Date().toISOString().split("T")[0];
+        }
+        const value = getBoundValue(component.maxDate);
+        return typeof value === "string" && value ? value : undefined;
+      };
+
       return (
         <div className="a2ui-datetime">
           {component.label && <label>{component.label}</label>}
           <input
             type={component.mode === "datetime" ? "datetime-local" : "date"}
             value={(getBoundValue(component.binding) as string) || ""}
+            min={getMinDate()}
+            max={getMaxDate()}
             onChange={(e) => handleChange(e.target.value)}
           />
         </div>
       );
+    }
 
     case "Stepper": {
       const value = (getBoundValue(component.binding) as number) ?? component.min ?? 0;
@@ -256,22 +288,29 @@ function ComponentRenderer({ component, surface, onAction, onValueChange }: Comp
 
 /**
  * 조건 평가 (예: "/flight/tripType == 'roundtrip'")
+ * 지원 연산자: ==, !=
+ * 지원 값: 'string', true, false
  */
 function evaluateCondition(condition: string, dataModel: Record<string, unknown>): boolean {
-  // 간단한 == 조건 파싱
-  const match = condition.match(/^(.+?)\s*==\s*'(.+)'$/);
-  if (match) {
-    const [, path, expectedValue] = match;
+  // 문자열 값 비교: "/path == 'value'" 또는 "/path != 'value'"
+  const stringMatch = condition.match(/^(.+?)\s*(==|!=)\s*'(.+)'$/);
+  if (stringMatch) {
+    const [, path, operator, expectedValue] = stringMatch;
     const actualValue = getNestedValue(dataModel, path.split("/").filter(Boolean));
-    return actualValue === expectedValue;
+    return operator === "=="
+      ? actualValue === expectedValue
+      : actualValue !== expectedValue;
   }
 
-  // false 조건 파싱
-  const falseMatch = condition.match(/^(.+?)\s*==\s*false$/);
-  if (falseMatch) {
-    const [, path] = falseMatch;
+  // boolean 값 비교: "/path == true" 또는 "/path != false"
+  const boolMatch = condition.match(/^(.+?)\s*(==|!=)\s*(true|false)$/);
+  if (boolMatch) {
+    const [, path, operator, boolStr] = boolMatch;
+    const expectedValue = boolStr === "true";
     const actualValue = getNestedValue(dataModel, path.split("/").filter(Boolean));
-    return actualValue === false;
+    return operator === "=="
+      ? actualValue === expectedValue
+      : actualValue !== expectedValue;
   }
 
   return true;
@@ -302,7 +341,7 @@ function getIconEmoji(icon?: string): string {
     car: "🚗",
     package: "📦",
     search: "🔍",
-    swap: "⇄",
+    swap: "🔄",
     "check-circle": "✅",
   };
   return icons[icon || ""] || "•";

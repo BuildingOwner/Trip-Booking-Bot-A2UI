@@ -18,9 +18,11 @@ export interface A2UIComponent {
   min?: number;
   max?: number;
   minDate?: string;
+  maxDate?: string;
   hint?: string;
   variant?: string;
   searchable?: boolean;
+  excludeBinding?: string; // 해당 바인딩의 값과 같은 옵션을 제외
 }
 
 export interface A2UIOption {

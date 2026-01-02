@@ -87,6 +87,26 @@ export function ChatContainer() {
     }, 500); // 애니메이션 시간과 동일
   };
 
+  // 액션 핸들러 (클라이언트 처리 + 서버 전송)
+  const handleAction = (
+    surfaceId: string,
+    componentId: string,
+    action: string,
+    data?: Record<string, unknown>
+  ) => {
+    // swap-route: 출발지/도착지 교환 (클라이언트에서 직접 처리)
+    if (action === "swap-route") {
+      const departure = a2ui.getBoundValue(surfaceId, "/flight/departure");
+      const arrival = a2ui.getBoundValue(surfaceId, "/flight/arrival");
+      a2ui.updateDataValue(surfaceId, "/flight/departure", arrival || "");
+      a2ui.updateDataValue(surfaceId, "/flight/arrival", departure || "");
+      return;
+    }
+
+    // 기타 액션은 서버로 전송
+    sendAction(surfaceId, componentId, action, data);
+  };
+
   return (
     <div className="app-container">
       <header className="app-header">
@@ -104,7 +124,7 @@ export function ChatContainer() {
             >
               ✕
             </button>
-            <A2UISurfaceView a2ui={a2ui} onAction={sendAction} />
+            <A2UISurfaceView a2ui={a2ui} onAction={handleAction} />
           </div>
         )}
 
