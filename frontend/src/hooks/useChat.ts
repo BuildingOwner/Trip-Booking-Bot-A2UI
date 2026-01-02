@@ -40,6 +40,7 @@ export function useChat() {
         id: generateUUID(),
         type: "agent",
         content: msg.assistantMessage,
+        reasoning: msg.reasoning,  // GPT-5 thinking summary
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, chatMessage]);

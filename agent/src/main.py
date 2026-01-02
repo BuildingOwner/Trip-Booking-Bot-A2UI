@@ -1,16 +1,24 @@
 """FastAPI 엔트리포인트 - REST API 기반 A2UI 통신"""
 
+from dotenv import load_dotenv
+load_dotenv()  # 다른 모듈 import 전에 환경변수 로드
+
 from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
-from dotenv import load_dotenv
 
 from .agent import TravelAgent
-
-load_dotenv()
+from .nodes.llm import LLM_MODEL, LLM_MAX_TOKENS, LLM_REASONING_EFFORT
 
 app = FastAPI(title="Travel Booking Agent")
+
+
+@app.on_event("startup")
+async def startup_event():
+    """서버 시작 시 설정 로그 출력"""
+    reasoning_info = f", reasoning={LLM_REASONING_EFFORT}" if LLM_REASONING_EFFORT else ""
+    print(f"[LLM Config] Model: {LLM_MODEL}, max_tokens: {LLM_MAX_TOKENS}{reasoning_info}")
 
 # CORS 설정
 app.add_middleware(
@@ -42,7 +50,7 @@ agents: dict[str, TravelAgent] = {}
 def get_or_create_agent(client_id: str) -> TravelAgent:
     """클라이언트별 에이전트 가져오기 또는 생성"""
     if client_id not in agents:
-        agents[client_id] = TravelAgent()
+        agents[client_id] = TravelAgent(thread_id=client_id)
     return agents[client_id]
 
 
