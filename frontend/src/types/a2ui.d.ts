@@ -70,11 +70,16 @@ export interface UserActionMessage {
   };
 }
 
+export interface AssistantMessage {
+  assistantMessage: string;
+}
+
 export type A2UIMessage =
   | CreateSurfaceMessage
   | UpdateComponentsMessage
   | UpdateDataModelMessage
-  | DeleteSurfaceMessage;
+  | DeleteSurfaceMessage
+  | AssistantMessage;
 
 export interface ChatMessage {
   id: string;

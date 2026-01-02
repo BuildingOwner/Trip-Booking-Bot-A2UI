@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@a2ui/lit": "file:../libs/a2ui/renderers/lit",
+    "@lit/react": "^1.0.8",
     "lit": "^3.3.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

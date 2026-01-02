@@ -32,5 +32,6 @@ npm-debug.log*
 
 # Misc
 .cache/
-claude.md
 .claude/
+CLAUDE.md
+temp/

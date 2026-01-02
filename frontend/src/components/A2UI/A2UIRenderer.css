@@ -1,0 +1,233 @@
+.a2ui-renderer {
+  height: 100%;
+}
+
+.a2ui-surface {
+  background: transparent;
+  height: 100%;
+}
+
+.a2ui-empty {
+  color: #666;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Layout */
+.a2ui-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.a2ui-row {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Text */
+.a2ui-text {
+  margin: 0;
+  color: #333;
+}
+
+.a2ui-text.headline {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.a2ui-text.subtitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #444;
+}
+
+/* Icon */
+.a2ui-icon {
+  font-size: 24px;
+}
+
+/* Card */
+.a2ui-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 24px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.a2ui-card:hover {
+  border-color: #1976d2;
+  background: #e3f2fd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
+}
+
+.a2ui-card .a2ui-icon {
+  font-size: 32px;
+}
+
+.a2ui-card .a2ui-text {
+  font-weight: 500;
+}
+
+/* Button */
+.a2ui-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.a2ui-button.filled {
+  background: #1976d2;
+  color: white;
+}
+
+.a2ui-button.filled:hover {
+  background: #1565c0;
+}
+
+.a2ui-button.outlined {
+  background: white;
+  border: 2px solid #1976d2;
+  color: #1976d2;
+}
+
+.a2ui-button.outlined:hover {
+  background: #e3f2fd;
+}
+
+.a2ui-button.icon {
+  padding: 8px;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 50%;
+  min-width: 40px;
+  height: 40px;
+}
+
+/* Form Elements */
+.a2ui-choice-picker,
+.a2ui-datetime,
+.a2ui-stepper,
+.a2ui-textfield {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 150px;
+}
+
+.a2ui-choice-picker label,
+.a2ui-datetime label,
+.a2ui-stepper label,
+.a2ui-textfield label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+}
+
+.a2ui-choice-picker select,
+.a2ui-datetime input,
+.a2ui-stepper input,
+.a2ui-textfield input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.a2ui-choice-picker select:focus,
+.a2ui-datetime input:focus,
+.a2ui-stepper input:focus,
+.a2ui-textfield input:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.a2ui-stepper input {
+  width: 80px;
+  text-align: center;
+}
+
+.a2ui-stepper-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.a2ui-stepper-controls button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #333;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.a2ui-stepper-controls button:hover:not(:disabled) {
+  background: #555;
+}
+
+.a2ui-stepper-controls button:disabled {
+  background: #ccc;
+  border-color: #ccc;
+  cursor: not-allowed;
+}
+
+.a2ui-stepper-controls span {
+  min-width: 40px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Checkbox */
+.a2ui-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.a2ui-checkbox input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.a2ui-checkbox label {
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Unknown component */
+.a2ui-unknown {
+  padding: 8px;
+  background: #fff3cd;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #856404;
+}
