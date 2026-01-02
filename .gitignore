@@ -34,3 +34,4 @@ npm-debug.log*
 .cache/
 .claude/
 CLAUDE.md
+temp/

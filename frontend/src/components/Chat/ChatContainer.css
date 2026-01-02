@@ -1,57 +1,99 @@
-.chat-container {
+/* App Container */
+.app-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  max-width: 800px;
-  margin: 0 auto;
-  background: #fff;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  background: #f0f2f5;
 }
 
-.chat-header {
+/* Header */
+.app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
+  padding: 12px 24px;
   background: #1976d2;
   color: white;
+  flex-shrink: 0;
 }
 
-.chat-header h1 {
+.app-header h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 500;
 }
 
-.connection-status {
+.loading-status {
   font-size: 12px;
   padding: 4px 12px;
   border-radius: 12px;
-}
-
-.connection-status.connected {
   background: rgba(255, 255, 255, 0.2);
+  animation: pulse 1.5s infinite;
 }
 
-.connection-status.disconnected {
-  background: rgba(255, 193, 7, 0.3);
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-.chat-content {
+/* Main Content - 좌우 분할 */
+.main-content {
   flex: 1;
   display: flex;
-  flex-direction: column;
   overflow: hidden;
   padding: 16px;
   gap: 16px;
+  justify-content: center;
 }
 
-.user-messages {
+/* 채팅만 있을 때: 가운데 정렬 */
+.main-content.chat-only {
+  justify-content: center;
+}
+
+.main-content.chat-only .chat-panel {
+  max-width: 600px;
+}
+
+/* 채팅 패널 (오른쪽) */
+.chat-panel {
+  flex: 0 0 500px;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: all 0.5s ease;
+}
+
+/* 메시지 영역 */
+.messages-area {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 150px;
-  overflow-y: auto;
+}
+
+.empty-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  text-align: center;
+}
+
+.empty-chat p {
+  margin: 4px 0;
+}
+
+.empty-chat .hint {
+  font-size: 13px;
+  color: #999;
 }
 
 .user-message {
@@ -60,23 +102,113 @@
   color: #1565c0;
   padding: 10px 16px;
   border-radius: 18px 18px 4px 18px;
-  max-width: 70%;
+  max-width: 85%;
   font-size: 14px;
+  word-break: break-word;
 }
 
-.a2ui-surface-view {
+.agent-message {
+  align-self: flex-start;
+  background: #f5f5f5;
+  color: #333;
+  padding: 10px 16px;
+  border-radius: 18px 18px 18px 4px;
+  max-width: 85%;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+/* UI 패널 (왼쪽) */
+.ui-panel {
   flex: 1;
-  overflow-y: auto;
-  background: #fafafa;
+  min-width: 0;
+  max-width: 800px;
+  background: white;
   border-radius: 12px;
-  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  animation: slideInFromLeft 0.6s ease;
+  position: relative;
 }
 
-.a2ui-empty {
+.ui-panel-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #f0f0f0;
+  color: #666;
+  font-size: 16px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.ui-panel-close:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+}
+
+.ui-panel.closing {
+  animation: slideOutToLeft 0.5s ease forwards;
+}
+
+/* A2UI Surface View 스타일 오버라이드 */
+.ui-panel .a2ui-surface-view {
   height: 100%;
-  color: #999;
-  font-size: 14px;
+  overflow-y: auto;
+  background: #fafafa;
+  padding: 16px;
+}
+
+/* 반응형: 작은 화면에서는 세로 배치 */
+@media (max-width: 900px) {
+  .main-content {
+    flex-direction: column;
+  }
+
+  .main-content.chat-only .chat-panel {
+    max-width: none;
+  }
+
+  .chat-panel {
+    flex: none;
+    height: 40%;
+    max-width: none !important;
+  }
+
+  .ui-panel {
+    flex: 1;
+    min-width: auto;
+    max-width: none;
+    order: -1; /* 폼을 위로 */
+  }
 }
