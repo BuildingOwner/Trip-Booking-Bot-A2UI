@@ -27,9 +27,24 @@ function isAssistantMessage(msg: A2UIMessage): msg is AssistantMessage {
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const a2ui = useA2UI();
   const api = getApiService();
   const initializedRef = useRef(false);
+
+  // 에러 클리어
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  // 요청 취소
+  const abortRequest = useCallback(() => {
+    const wasAborted = api.abortCurrentRequest();
+    if (wasAborted) {
+      setIsLoading(false);
+    }
+    return wasAborted;
+  }, [api]);
 
   // 서버 응답 처리 (assistantMessage 추출 + A2UI 처리)
   const processServerMessages = useCallback((serverMessages: A2UIMessage[]) => {
@@ -60,6 +75,7 @@ export function useChat() {
 
     const loadInitialUI = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         const response = await api.getInitialUI();
         if (response.success && response.data) {
@@ -71,9 +87,12 @@ export function useChat() {
             // 단일 메시지 (하위 호환)
             a2ui.processMessage(response.data as A2UIMessage);
           }
+        } else if (!response.success && response.error) {
+          setError("서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
         }
-      } catch (error) {
-        console.error("Failed to load initial UI:", error);
+      } catch (err) {
+        console.error("Failed to load initial UI:", err);
+        setError("서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
       } finally {
         setIsLoading(false);
       }
@@ -93,6 +112,7 @@ export function useChat() {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, userMessage]);
+      setError(null);
 
       setIsLoading(true);
       try {
@@ -114,9 +134,15 @@ export function useChat() {
           if (data.messages && Array.isArray(data.messages)) {
             processServerMessages(data.messages);
           }
+        } else if (!response.success) {
+          // 사용자가 취소한 경우는 에러로 처리하지 않음
+          if (response.error !== "aborted") {
+            setError("메시지 전송에 실패했습니다. 다시 시도해주세요.");
+          }
         }
-      } catch (error) {
-        console.error("Failed to send message:", error);
+      } catch (err) {
+        console.error("Failed to send message:", err);
+        setError("메시지 전송에 실패했습니다. 다시 시도해주세요.");
       } finally {
         setIsLoading(false);
       }
@@ -136,6 +162,7 @@ export function useChat() {
         },
       };
 
+      setError(null);
       setIsLoading(true);
       try {
         const response = await api.sendMessage(actionMessage);
@@ -147,9 +174,14 @@ export function useChat() {
           if (responseData.messages && Array.isArray(responseData.messages)) {
             processServerMessages(responseData.messages);
           }
+        } else if (!response.success) {
+          if (response.error !== "aborted") {
+            setError("요청 처리에 실패했습니다. 다시 시도해주세요.");
+          }
         }
-      } catch (error) {
-        console.error("Failed to send action:", error);
+      } catch (err) {
+        console.error("Failed to send action:", err);
+        setError("요청 처리에 실패했습니다. 다시 시도해주세요.");
       } finally {
         setIsLoading(false);
       }
@@ -160,8 +192,11 @@ export function useChat() {
   return {
     messages,
     isLoading,
+    error,
     sendMessage,
     sendAction,
+    abortRequest,
+    clearError,
     a2ui,
   };
 }

@@ -10,6 +10,7 @@ from ..nodes import (
     conversation_node,
     action_handler_node,
     modify_handler_node,
+    clarify_handler_node,
 )
 
 
@@ -30,6 +31,8 @@ def route_intent(state: TravelState) -> str:
         return "form_generator"
     elif intent_type == "modify":
         return "modify_handler"
+    elif intent_type == "clarify":
+        return "clarify_handler"
     else:
         return "conversation"
 
@@ -46,6 +49,7 @@ def create_travel_graph():
     graph.add_node("conversation", conversation_node)
     graph.add_node("action_handler", action_handler_node)
     graph.add_node("modify_handler", modify_handler_node)
+    graph.add_node("clarify_handler", clarify_handler_node)
 
     # 시작점: 조건부 엔트리 포인트
     graph.set_conditional_entry_point(route_input)
@@ -58,6 +62,7 @@ def create_travel_graph():
             "form_generator": "form_generator",
             "conversation": "conversation",
             "modify_handler": "modify_handler",
+            "clarify_handler": "clarify_handler",
         },
     )
 
@@ -66,6 +71,7 @@ def create_travel_graph():
     graph.add_edge("conversation", END)
     graph.add_edge("action_handler", END)
     graph.add_edge("modify_handler", END)
+    graph.add_edge("clarify_handler", END)
 
     # 컴파일
     return graph.compile()
@@ -90,6 +96,7 @@ def get_travel_graph():
         graph.add_node("conversation", conversation_node)
         graph.add_node("action_handler", action_handler_node)
         graph.add_node("modify_handler", modify_handler_node)
+        graph.add_node("clarify_handler", clarify_handler_node)
 
         # 시작점: 조건부 엔트리 포인트
         graph.set_conditional_entry_point(route_input)
@@ -102,6 +109,7 @@ def get_travel_graph():
                 "form_generator": "form_generator",
                 "conversation": "conversation",
                 "modify_handler": "modify_handler",
+                "clarify_handler": "clarify_handler",
             },
         )
 
@@ -110,6 +118,7 @@ def get_travel_graph():
         graph.add_edge("conversation", END)
         graph.add_edge("action_handler", END)
         graph.add_edge("modify_handler", END)
+        graph.add_edge("clarify_handler", END)
 
         # 체크포인터와 함께 컴파일
         _compiled_graph = graph.compile(checkpointer=_checkpointer)
