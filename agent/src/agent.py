@@ -25,7 +25,14 @@ class TravelAgent:
         """사용자 메시지/액션 처리"""
 
         # 상태 초기화 (chat_history는 MemorySaver가 자동 관리)
-        state = {}
+        # 중요: user_action과 user_message 중 하나만 설정하고 다른 쪽은 명시적으로 초기화
+        # (MemorySaver가 이전 state를 병합하기 때문에 이전 값이 남아있을 수 있음)
+        state = {
+            "user_action": None,
+            "user_message": "",
+            "current_data": {},
+            "current_surface_id": "",
+        }
 
         # 입력 타입 설정
         if "userAction" in message:

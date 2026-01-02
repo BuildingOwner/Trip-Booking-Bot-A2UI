@@ -23,6 +23,7 @@ export interface A2UIComponent {
   variant?: string;
   searchable?: boolean;
   excludeBinding?: string; // 해당 바인딩의 값과 같은 옵션을 제외
+  itemTemplate?: string; // List 컴포넌트용 아이템 템플릿
 }
 
 export interface A2UIOption {
