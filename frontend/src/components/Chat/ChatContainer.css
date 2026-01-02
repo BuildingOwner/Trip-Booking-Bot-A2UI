@@ -315,6 +315,64 @@
   margin-bottom: 0;
 }
 
+/* 에러 메시지 */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  color: #c62828;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  animation: fadeIn 0.3s ease;
+}
+
+.error-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: #c62828;
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.error-text {
+  flex: 1;
+}
+
+.error-dismiss {
+  background: none;
+  border: none;
+  color: #c62828;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.error-dismiss:hover {
+  opacity: 1;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Thinking 애니메이션 (로딩) */
 .agent-message.thinking {
   padding: 14px 20px;

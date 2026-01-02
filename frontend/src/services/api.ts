@@ -33,10 +33,23 @@ export interface ChatResponse {
 class ApiService {
   private baseUrl: string;
   private clientId: string;
+  private currentAbortController: AbortController | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
     this.clientId = generateUUID();
+  }
+
+  /**
+   * 현재 진행 중인 요청 취소
+   */
+  abortCurrentRequest(): boolean {
+    if (this.currentAbortController) {
+      this.currentAbortController.abort();
+      this.currentAbortController = null;
+      return true;
+    }
+    return false;
   }
 
   async getInitialUI(): Promise<ChatResponse> {
@@ -64,6 +77,12 @@ class ApiService {
   }
 
   async sendMessage(request: ChatRequest): Promise<ChatResponse> {
+    // 이전 요청이 있으면 취소
+    this.abortCurrentRequest();
+
+    // 새 AbortController 생성
+    this.currentAbortController = new AbortController();
+
     try {
       const response = await fetch(`${this.baseUrl}/chat`, {
         method: "POST",
@@ -72,6 +91,7 @@ class ApiService {
           "X-Client-ID": this.clientId,
         },
         body: JSON.stringify(request),
+        signal: this.currentAbortController.signal,
       });
 
       if (!response.ok) {
@@ -79,8 +99,19 @@ class ApiService {
       }
 
       const data = await response.json();
+      this.currentAbortController = null;
       return { success: true, data };
     } catch (error) {
+      this.currentAbortController = null;
+
+      // 사용자가 취소한 경우
+      if (error instanceof Error && error.name === "AbortError") {
+        return {
+          success: false,
+          error: "aborted",
+        };
+      }
+
       console.error("API request failed:", error);
       return {
         success: false,

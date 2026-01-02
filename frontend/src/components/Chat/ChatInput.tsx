@@ -7,6 +7,8 @@ import "./ChatInput.css";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
+  onStop?: () => void;
+  isLoading?: boolean;
   disabled?: boolean;
 }
 
@@ -14,7 +16,7 @@ export interface ChatInputHandle {
   focus: () => void;
 }
 
-export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ onSend, disabled }, ref) => {
+export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ onSend, onStop, isLoading, disabled }, ref) => {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -50,8 +52,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ onSend, 
     }
   };
 
+  const handleStop = (e: FormEvent) => {
+    e.preventDefault();
+    onStop?.();
+  };
+
   return (
-    <form className="chat-input" onSubmit={handleSubmit}>
+    <form className="chat-input" onSubmit={isLoading ? handleStop : handleSubmit}>
       <textarea
         ref={textareaRef}
         value={input}
@@ -61,9 +68,15 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ onSend, 
         disabled={disabled}
         rows={1}
       />
-      <button type="submit" disabled={disabled || !input.trim()}>
-        전송
-      </button>
+      {isLoading ? (
+        <button type="submit" className="stop-btn">
+          중단
+        </button>
+      ) : (
+        <button type="submit" disabled={disabled || !input.trim()}>
+          전송
+        </button>
+      )}
     </form>
   );
 });

@@ -59,7 +59,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
 }
 
 export function ChatContainer() {
-  const { messages, isLoading, sendMessage, sendAction, a2ui } = useChat();
+  const { messages, isLoading, error, sendMessage, sendAction, abortRequest, clearError, a2ui } = useChat();
   const [isClosing, setIsClosing] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -151,6 +151,16 @@ export function ChatContainer() {
                 {messages.map((m) => (
                   <MessageItem key={m.id} message={m} />
                 ))}
+                {/* 에러 메시지 */}
+                {error && (
+                  <div className="error-message">
+                    <span className="error-icon">!</span>
+                    <span className="error-text">{error}</span>
+                    <button className="error-dismiss" onClick={clearError} title="닫기">
+                      ✕
+                    </button>
+                  </div>
+                )}
                 {/* Thinking 애니메이션 */}
                 {isLoading && (
                   <div className="agent-message thinking">
@@ -165,7 +175,7 @@ export function ChatContainer() {
             )}
             <div ref={messagesEndRef} />
           </div>
-          <ChatInput ref={chatInputRef} onSend={sendMessage} disabled={isLoading} />
+          <ChatInput ref={chatInputRef} onSend={sendMessage} onStop={abortRequest} isLoading={isLoading} />
         </div>
       </div>
     </div>
