@@ -50,7 +50,7 @@ agents: dict[str, TravelAgent] = {}
 def get_or_create_agent(client_id: str) -> TravelAgent:
     """클라이언트별 에이전트 가져오기 또는 생성"""
     if client_id not in agents:
-        agents[client_id] = TravelAgent()
+        agents[client_id] = TravelAgent(thread_id=client_id)
     return agents[client_id]
 
 
