@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useChat } from "../../hooks/useChat";
-import { ChatInput } from "./ChatInput";
+import { ChatInput, type ChatInputHandle } from "./ChatInput";
 import { A2UISurfaceView } from "./A2UISurfaceView";
 import type { ChatMessage } from "../../types/a2ui";
 import "./ChatContainer.css";
@@ -63,6 +63,8 @@ export function ChatContainer() {
   const [isClosing, setIsClosing] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<ChatInputHandle>(null);
+  const prevIsLoadingRef = useRef(isLoading);
 
   const hasUI = a2ui.activeSurface !== null;
 
@@ -70,6 +72,14 @@ export function ChatContainer() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  // AI 응답 완료 시 (isLoading: true → false) 입력창에 포커스
+  useEffect(() => {
+    if (prevIsLoadingRef.current && !isLoading) {
+      chatInputRef.current?.focus();
+    }
+    prevIsLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   // UI 패널 표시/숨김 애니메이션 처리
   useEffect(() => {
@@ -155,7 +165,7 @@ export function ChatContainer() {
             )}
             <div ref={messagesEndRef} />
           </div>
-          <ChatInput onSend={sendMessage} disabled={isLoading} />
+          <ChatInput ref={chatInputRef} onSend={sendMessage} disabled={isLoading} />
         </div>
       </div>
     </div>

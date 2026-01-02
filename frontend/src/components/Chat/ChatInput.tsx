@@ -2,7 +2,7 @@
  * 채팅 입력 컴포넌트
  */
 
-import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from "react";
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef, type FormEvent, type KeyboardEvent } from "react";
 import "./ChatInput.css";
 
 interface ChatInputProps {
@@ -10,9 +10,18 @@ interface ChatInputProps {
   disabled?: boolean;
 }
 
-export function ChatInput({ onSend, disabled }: ChatInputProps) {
+export interface ChatInputHandle {
+  focus: () => void;
+}
+
+export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ onSend, disabled }, ref) => {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 외부에서 focus() 호출 가능하게 expose
+  useImperativeHandle(ref, () => ({
+    focus: () => textareaRef.current?.focus(),
+  }));
 
   // 자동 높이 조절
   useEffect(() => {
@@ -28,6 +37,8 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
     if (input.trim() && !disabled) {
       onSend(input.trim());
       setInput("");
+      // 전송 후 입력창에 포커스 유지
+      textareaRef.current?.focus();
     }
   };
 
@@ -55,4 +66,4 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
       </button>
     </form>
   );
-}
+});

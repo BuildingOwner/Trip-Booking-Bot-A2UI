@@ -17,7 +17,7 @@ class TravelState(TypedDict, total=False):
     current_surface_id: str  # 현재 활성 Surface ID
 
     # 의도 분석 결과
-    intent_type: Literal["flight", "hotel", "car", "package", "unknown"]
+    intent_type: Literal["flight", "hotel", "car", "package", "modify", "unknown"]
     entities: dict  # 추출된 엔티티 (departure, arrival, departureDate, returnDate 등)
 
     # 대화 히스토리 (LangChain 메시지 타입, add_messages reducer)

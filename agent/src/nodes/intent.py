@@ -14,12 +14,14 @@ INTENT_PROMPT = """당신은 여행 예약/검색 의도 분석기입니다. 사
 2. "숙소", "호텔", "게스트하우스", "에어비앤비" 등은 모두 "hotel" 타입
 3. "항공", "비행기", "항공권", "티켓" 등은 모두 "flight" 타입
 4. 단순 질문이나 일반 대화는 "unknown"으로 분류
+5. **활성 폼이 있는 상태에서** "변경", "바꿔", "수정" 등의 표현은 "modify" 타입
 
 ## 타입 분류
 - 항공권 관련 요청: type: "flight"
 - 호텔/숙소 관련 요청: type: "hotel"
 - 렌터카 관련 요청: type: "car"
 - 패키지 여행 요청: type: "package"
+- **기존 폼 데이터 변경 요청**: type: "modify" (예: "좌석 비즈니스로 바꿔줘", "출발지 변경해줘")
 - 그 외: type: "unknown"
 
 ## 엔티티 추출 (있는 경우만)
@@ -30,6 +32,29 @@ INTENT_PROMPT = """당신은 여행 예약/검색 의도 분석기입니다. 사
 - tripType: 왕복이면 "roundtrip", 편도면 "oneway"
 - adults: 성인 수 (숫자)
 - children: 아동 수 (숫자)
+- class: 좌석 등급 ("economy", "business", "first")
+
+## modify 타입 전용 엔티티 (폼 수정 시)
+- modifyField: 변경할 필드명 (departure, arrival, departureDate, returnDate, tripType, adults, children, infants, class 중 하나)
+- modifyValue: 변경할 값
+
+### 필드 매핑 (사용자 표현 → modifyField)
+- "출발지", "출발", "떠나는 곳" → departure
+- "도착지", "목적지", "가는 곳" → arrival
+- "출발일", "가는 날", "떠나는 날" → departureDate
+- "귀국일", "돌아오는 날", "복귀일" → returnDate
+- "왕복", "편도" → tripType
+- "성인", "어른" → adults
+- "아동", "어린이", "아이" → children
+- "유아", "영아", "애기", "아기" → infants
+- "좌석", "좌석등급", "클래스" → class
+
+### 값 매핑 (사용자 표현 → modifyValue)
+- "비즈니스", "비지니스" → business
+- "이코노미", "일반석" → economy
+- "퍼스트", "일등석" → first
+- "왕복" → roundtrip
+- "편도" → oneway
 
 ## 공항 코드 매핑 (알려진 경우)
 - 인천: ICN, 김포: GMP, 제주: CJU, 부산/김해: PUS
@@ -38,10 +63,13 @@ INTENT_PROMPT = """당신은 여행 예약/검색 의도 분석기입니다. 사
 
 ## 응답 형식 (JSON)
 반드시 아래 형식의 JSON만 출력하세요:
-{{"type": "flight|hotel|car|package|unknown", "entities": {{"departure": "출발지 또는 null", "arrival": "도착지 또는 null", "departureDate": "YYYY-MM-DD 또는 null", "returnDate": "YYYY-MM-DD 또는 null", "tripType": "roundtrip|oneway 또는 null", "adults": 숫자 또는 null, "children": 숫자 또는 null}}}}
+{{"type": "flight|hotel|car|package|modify|unknown", "entities": {{"departure": "출발지 또는 null", "arrival": "도착지 또는 null", "departureDate": "YYYY-MM-DD 또는 null", "returnDate": "YYYY-MM-DD 또는 null", "tripType": "roundtrip|oneway 또는 null", "adults": 숫자 또는 null, "children": 숫자 또는 null, "infants": 숫자 또는 null, "class": "economy|business|first 또는 null", "modifyField": "필드명 또는 null", "modifyValue": "변경값 또는 null"}}}}
 
 ## 현재 날짜 정보
 오늘 날짜: {today}
+
+## 현재 활성 Surface 정보
+{surface_context}
 """
 
 
@@ -50,6 +78,8 @@ def intent_node(state: TravelState) -> TravelState:
     from datetime import date
 
     user_message = state.get("user_message", "")
+    current_surface_id = state.get("current_surface_id", "")
+    current_data = state.get("current_data", {})
 
     if not user_message:
         return {"intent_type": "unknown", "entities": {}}
@@ -57,15 +87,23 @@ def intent_node(state: TravelState) -> TravelState:
     llm = get_llm()
 
     if not llm:
-        intent_type = _keyword_based_analysis(user_message)
+        intent_type = _keyword_based_analysis(user_message, current_surface_id)
         return {"intent_type": intent_type, "entities": {}}
 
     try:
         print(f"[Intent Node] Starting analysis for: {user_message}")
+        print(f"[Intent Node] Active Surface: {current_surface_id}, Data: {current_data}")
 
         # 오늘 날짜를 프롬프트에 포함
         today = date.today().isoformat()
-        prompt = INTENT_PROMPT.format(today=today)
+
+        # 활성 Surface 컨텍스트 생성
+        if current_surface_id and current_data:
+            surface_context = f"활성 Surface ID: {current_surface_id}\n현재 폼 데이터: {json.dumps(current_data, ensure_ascii=False)}"
+        else:
+            surface_context = "활성 Surface 없음 (폼 수정 불가)"
+
+        prompt = INTENT_PROMPT.format(today=today, surface_context=surface_context)
 
         messages = [
             SystemMessage(content=prompt),
@@ -104,19 +142,22 @@ def intent_node(state: TravelState) -> TravelState:
     except json.JSONDecodeError as e:
         print(f"[Intent Node] JSON Parse Error: {e}")
         print(f"[Intent Node] Raw content: {content}")
-        intent_type = _keyword_based_analysis(user_message)
+        intent_type = _keyword_based_analysis(user_message, current_surface_id)
         return {"intent_type": intent_type, "entities": {}}
     except Exception as e:
         print(f"[Intent Node] Error: {e}")
-        intent_type = _keyword_based_analysis(user_message)
+        intent_type = _keyword_based_analysis(user_message, current_surface_id)
         return {"intent_type": intent_type, "entities": {}}
 
 
-def _keyword_based_analysis(text: str) -> str:
+def _keyword_based_analysis(text: str, current_surface_id: str = "") -> str:
     """키워드 기반 의도 분석 (폴백)"""
     text_lower = text.lower()
 
-    if any(kw in text_lower for kw in ["항공", "비행기", "flight", "fly"]):
+    # 활성 Surface가 있고 변경 관련 키워드가 있으면 modify
+    if current_surface_id and any(kw in text_lower for kw in ["변경", "바꿔", "수정", "change", "modify"]):
+        return "modify"
+    elif any(kw in text_lower for kw in ["항공", "비행기", "flight", "fly"]):
         return "flight"
     elif any(kw in text_lower for kw in ["호텔", "숙소", "hotel", "stay"]):
         return "hotel"
