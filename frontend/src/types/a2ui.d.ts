@@ -72,6 +72,7 @@ export interface UserActionMessage {
 
 export interface AssistantMessage {
   assistantMessage: string;
+  reasoning?: string;  // GPT-5 thinking summary
 }
 
 export type A2UIMessage =
@@ -85,6 +86,7 @@ export interface ChatMessage {
   id: string;
   type: "user" | "agent" | "ui";
   content?: string;
+  reasoning?: string;  // GPT-5 thinking summary
   a2ui?: A2UIMessage;
   timestamp: Date;
 }

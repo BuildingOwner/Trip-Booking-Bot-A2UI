@@ -2,7 +2,7 @@
  * 채팅 입력 컴포넌트
  */
 
-import { useState, type FormEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from "react";
 import "./ChatInput.css";
 
 interface ChatInputProps {
@@ -12,6 +12,16 @@ interface ChatInputProps {
 
 export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [input, setInput] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 자동 높이 조절
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
+    }
+  }, [input]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -21,14 +31,24 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
     }
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter로 전송, Shift+Enter로 줄바꿈
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   return (
     <form className="chat-input" onSubmit={handleSubmit}>
-      <input
-        type="text"
+      <textarea
+        ref={textareaRef}
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
         placeholder="메시지를 입력하세요..."
         disabled={disabled}
+        rows={1}
       />
       <button type="submit" disabled={disabled || !input.trim()}>
         전송

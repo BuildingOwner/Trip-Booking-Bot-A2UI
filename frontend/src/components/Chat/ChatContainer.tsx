@@ -5,10 +5,58 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useChat } from "../../hooks/useChat";
 import { ChatInput } from "./ChatInput";
 import { A2UISurfaceView } from "./A2UISurfaceView";
+import type { ChatMessage } from "../../types/a2ui";
 import "./ChatContainer.css";
+
+// Thinking 컴포넌트 (접을 수 있는 reasoning 표시)
+function ThinkingBlock({ reasoning }: { reasoning: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="thinking-block">
+      <button
+        className="thinking-toggle"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <span className="thinking-icon">✦</span>
+        <span className="thinking-label">Thinking</span>
+        <span className={`thinking-arrow ${isExpanded ? "expanded" : ""}`}>
+          ▼
+        </span>
+      </button>
+      {isExpanded && (
+        <div className="thinking-content">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 메시지 아이템 컴포넌트
+function MessageItem({ message }: { message: ChatMessage }) {
+  if (message.type === "user") {
+    return (
+      <div className="user-message">
+        {message.content}
+      </div>
+    );
+  }
+
+  return (
+    <div className="agent-message">
+      {message.reasoning && (
+        <ThinkingBlock reasoning={message.reasoning} />
+      )}
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+    </div>
+  );
+}
 
 export function ChatContainer() {
   const { messages, isLoading, sendMessage, sendAction, a2ui } = useChat();
@@ -21,7 +69,7 @@ export function ChatContainer() {
   // 메시지가 추가되면 자동 스크롤
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isLoading]);
 
   // UI 패널 표시/숨김 애니메이션 처리
   useEffect(() => {
@@ -43,7 +91,6 @@ export function ChatContainer() {
     <div className="app-container">
       <header className="app-header">
         <h1>여행 예약 봇</h1>
-        {isLoading && <span className="loading-status">처리 중...</span>}
       </header>
 
       <div className={`main-content ${showPanel ? "with-panel" : "chat-only"}`}>
@@ -64,20 +111,27 @@ export function ChatContainer() {
         {/* 오른쪽: 채팅 영역 */}
         <div className="chat-panel">
           <div className="messages-area">
-            {messages.length === 0 ? (
+            {messages.length === 0 && !isLoading ? (
               <div className="empty-chat">
                 <p>여행 예약을 도와드릴게요!</p>
                 <p className="hint">예: "항공권 예약", "호텔 예약", "렌터카 예약"</p>
               </div>
             ) : (
-              messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={m.type === "user" ? "user-message" : "agent-message"}
-                >
-                  {m.content}
-                </div>
-              ))
+              <>
+                {messages.map((m) => (
+                  <MessageItem key={m.id} message={m} />
+                ))}
+                {/* Thinking 애니메이션 */}
+                {isLoading && (
+                  <div className="agent-message thinking">
+                    <div className="thinking-dots">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             <div ref={messagesEndRef} />
           </div>
