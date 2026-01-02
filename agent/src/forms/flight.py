@@ -1,5 +1,6 @@
 """항공권 예약 폼 생성기"""
 
+from typing import Optional
 from .base import BaseFormGenerator
 
 
@@ -8,8 +9,9 @@ class FlightFormGenerator(BaseFormGenerator):
 
     SURFACE_ID = "flight-booking"
 
-    def generate(self) -> list[dict]:
+    def generate(self, entities: Optional[dict] = None) -> list[dict]:
         messages = []
+        entities = entities or {}
 
         # Surface 생성
         messages.append(self.create_surface(self.SURFACE_ID))
@@ -22,11 +24,11 @@ class FlightFormGenerator(BaseFormGenerator):
             }
         })
 
-        # 초기 데이터 모델
+        # 초기 데이터 모델 (entities로 초기값 설정)
         messages.append({
             "updateDataModel": {
                 "surfaceId": self.SURFACE_ID,
-                "operations": self._get_initial_data()
+                "operations": self._get_initial_data(entities)
             }
         })
 
@@ -67,6 +69,7 @@ class FlightFormGenerator(BaseFormGenerator):
                 "label": "출발지",
                 "options": "/airports",
                 "binding": "/flight/departure",
+                "excludeBinding": "/flight/arrival",
                 "searchable": True
             },
             {
@@ -82,6 +85,7 @@ class FlightFormGenerator(BaseFormGenerator):
                 "label": "도착지",
                 "options": "/airports",
                 "binding": "/flight/arrival",
+                "excludeBinding": "/flight/departure",
                 "searchable": True
             },
             {
@@ -168,20 +172,29 @@ class FlightFormGenerator(BaseFormGenerator):
             }
         ]
 
-    def _get_initial_data(self) -> list[dict]:
+    def _get_initial_data(self, entities: dict) -> list[dict]:
+        # entities에서 값 추출 (없으면 기본값)
+        trip_type = entities.get("tripType", "roundtrip")
+        departure = entities.get("departure", "")
+        arrival = entities.get("arrival", "")
+        departure_date = entities.get("departureDate", "")
+        return_date = entities.get("returnDate", "")
+        adults = entities.get("adults", 1)
+        children = entities.get("children", 0)
+
         return [
             {
                 "op": "add",
                 "path": "/flight",
                 "value": {
-                    "tripType": "roundtrip",
-                    "departure": "",
-                    "arrival": "",
-                    "departureDate": "",
-                    "returnDate": "",
+                    "tripType": trip_type,
+                    "departure": departure,
+                    "arrival": arrival,
+                    "departureDate": departure_date,
+                    "returnDate": return_date,
                     "passengers": {
-                        "adults": 1,
-                        "children": 0,
+                        "adults": adults if isinstance(adults, int) else 1,
+                        "children": children if isinstance(children, int) else 0,
                         "infants": 0
                     },
                     "class": "economy"
@@ -196,8 +209,12 @@ class FlightFormGenerator(BaseFormGenerator):
                     {"value": "CJU", "label": "제주국제공항 (CJU)"},
                     {"value": "PUS", "label": "김해국제공항 (PUS)"},
                     {"value": "NRT", "label": "도쿄 나리타 (NRT)"},
+                    {"value": "HND", "label": "도쿄 하네다 (HND)"},
                     {"value": "KIX", "label": "오사카 간사이 (KIX)"},
-                    {"value": "BKK", "label": "방콕 수완나품 (BKK)"}
+                    {"value": "FUK", "label": "후쿠오카 (FUK)"},
+                    {"value": "BKK", "label": "방콕 수완나품 (BKK)"},
+                    {"value": "SIN", "label": "싱가포르 창이 (SIN)"},
+                    {"value": "HKG", "label": "홍콩 (HKG)"}
                 ]
             }
         ]

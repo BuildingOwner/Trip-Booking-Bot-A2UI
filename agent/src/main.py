@@ -41,6 +41,8 @@ class UserAction(BaseModel):
 class ChatRequest(BaseModel):
     text: Optional[str] = None
     userAction: Optional[UserAction] = None
+    currentData: Optional[dict] = None  # 현재 활성 폼의 데이터
+    surfaceId: Optional[str] = None     # 현재 활성 Surface ID
 
 
 # 클라이언트별 에이전트 관리
@@ -80,6 +82,11 @@ async def chat(request: ChatRequest, x_client_id: str = Header(alias="X-Client-I
     message = {}
     if request.text:
         message["text"] = request.text
+        # 현재 폼 데이터가 있으면 함께 전달
+        if request.currentData:
+            message["currentData"] = request.currentData
+        if request.surfaceId:
+            message["surfaceId"] = request.surfaceId
     elif request.userAction:
         message["userAction"] = request.userAction.model_dump()
 

@@ -96,7 +96,16 @@ export function useChat() {
 
       setIsLoading(true);
       try {
-        const response = await api.sendMessage({ text });
+        // 활성 Surface의 dataModel을 함께 전송 (폼 데이터 유지용)
+        const currentSurface = a2ui.activeSurface;
+        const payload: { text: string; currentData?: Record<string, unknown>; surfaceId?: string } = { text };
+
+        if (currentSurface) {
+          payload.currentData = currentSurface.dataModel;
+          payload.surfaceId = currentSurface.surfaceId;
+        }
+
+        const response = await api.sendMessage(payload);
 
         if (response.success && response.data) {
           const data = response.data as { messages?: A2UIMessage[] };
@@ -112,7 +121,7 @@ export function useChat() {
         setIsLoading(false);
       }
     },
-    [api, processServerMessages]
+    [api, processServerMessages, a2ui.activeSurface]
   );
 
   // userAction 전송

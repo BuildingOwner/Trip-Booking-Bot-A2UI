@@ -32,6 +32,11 @@ class TravelAgent:
             state["user_action"] = message["userAction"]
         elif "text" in message:
             state["user_message"] = message["text"]
+            # 현재 폼 데이터가 있으면 함께 전달
+            if "currentData" in message:
+                state["current_data"] = message["currentData"]
+            if "surfaceId" in message:
+                state["current_surface_id"] = message["surfaceId"]
         else:
             return []
 

@@ -1,5 +1,6 @@
 """호텔 예약 폼 생성기"""
 
+from typing import Optional
 from .base import BaseFormGenerator
 
 
@@ -8,8 +9,10 @@ class HotelFormGenerator(BaseFormGenerator):
 
     SURFACE_ID = "hotel-booking"
 
-    def generate(self) -> list[dict]:
+    def generate(self, entities: Optional[dict] = None) -> list[dict]:
         messages = []
+        entities = entities or {}
+
         messages.append(self.create_surface(self.SURFACE_ID))
         messages.append({
             "updateComponents": {
@@ -20,7 +23,7 @@ class HotelFormGenerator(BaseFormGenerator):
         messages.append({
             "updateDataModel": {
                 "surfaceId": self.SURFACE_ID,
-                "operations": self._get_initial_data()
+                "operations": self._get_initial_data(entities)
             }
         })
         return messages
@@ -117,19 +120,26 @@ class HotelFormGenerator(BaseFormGenerator):
             }
         ]
 
-    def _get_initial_data(self) -> list[dict]:
+    def _get_initial_data(self, entities: dict) -> list[dict]:
+        # entities에서 값 추출 (호텔의 경우 arrival이 destination)
+        destination = entities.get("arrival", "")
+        checkin_date = entities.get("departureDate", "")
+        checkout_date = entities.get("returnDate", "")
+        adults = entities.get("adults", 2)
+        children = entities.get("children", 0)
+
         return [
             {
                 "op": "add",
                 "path": "/hotel",
                 "value": {
-                    "destination": "",
-                    "checkinDate": "",
-                    "checkoutDate": "",
+                    "destination": destination,
+                    "checkinDate": checkin_date,
+                    "checkoutDate": checkout_date,
                     "rooms": 1,
                     "guests": {
-                        "adults": 2,
-                        "children": 0
+                        "adults": adults if isinstance(adults, int) else 2,
+                        "children": children if isinstance(children, int) else 0
                     }
                 }
             }
