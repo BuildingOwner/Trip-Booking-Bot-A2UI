@@ -3,22 +3,25 @@
 from dotenv import load_dotenv
 load_dotenv()  # 다른 모듈 import 전에 환경변수 로드
 
+import json
 from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
 
 from .agent import TravelAgent
-from .nodes.llm import LLM_MODEL, LLM_MAX_TOKENS, LLM_REASONING_EFFORT
+from .nodes.llm import LLM_MODEL, LLM_MAX_TOKENS, LLM_REASONING_EFFORT, reset_llm
 
 app = FastAPI(title="Travel Booking Agent")
 
 
 @app.on_event("startup")
 async def startup_event():
-    """서버 시작 시 설정 로그 출력"""
+    """서버 시작 시 설정 로그 출력 및 LLM 리셋"""
+    reset_llm()  # 캐시된 LLM 인스턴스 리셋
     reasoning_info = f", reasoning={LLM_REASONING_EFFORT}" if LLM_REASONING_EFFORT else ""
-    print(f"[LLM Config] Model: {LLM_MODEL}, max_tokens: {LLM_MAX_TOKENS}{reasoning_info}")
+    print(f"[LLM Config] Model: {LLM_MODEL}, max_tokens: {LLM_MAX_TOKENS}{reasoning_info}, streaming=True")
 
 # CORS 설정
 app.add_middleware(
@@ -95,3 +98,38 @@ async def chat(request: ChatRequest, x_client_id: str = Header(alias="X-Client-I
 
     # 모든 메시지를 배열로 반환
     return {"messages": responses}
+
+
+@app.post("/chat/stream")
+async def chat_stream(request: ChatRequest, x_client_id: str = Header(alias="X-Client-ID")):
+    """채팅 메시지 처리 (SSE 스트리밍)"""
+    agent = get_or_create_agent(x_client_id)
+
+    # 요청을 dict로 변환
+    message = {}
+    if request.text:
+        message["text"] = request.text
+        if request.currentData:
+            message["currentData"] = request.currentData
+        if request.surfaceId:
+            message["surfaceId"] = request.surfaceId
+    elif request.userAction:
+        message["userAction"] = request.userAction.model_dump()
+
+    async def event_generator():
+        """SSE 이벤트 생성기"""
+        try:
+            async for event in agent.handle_message_stream(message):
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # nginx 버퍼링 비활성화
+        },
+    )

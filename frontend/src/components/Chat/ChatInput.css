@@ -62,3 +62,12 @@
   background: #bdbdbd;
   cursor: not-allowed;
 }
+
+/* 중단 버튼 */
+.chat-input button.stop-btn {
+  background: #e53935;
+}
+
+.chat-input button.stop-btn:hover {
+  background: #c62828;
+}

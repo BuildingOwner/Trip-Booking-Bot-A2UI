@@ -10,16 +10,16 @@ LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "1024"))
 
 # Reasoning effort: 환경변수로 직접 설정하거나, 모델에 따라 자동 설정
 # 직접 설정: LLM_REASONING_EFFORT=high
-# 자동 설정: LLM_REASONING_EFFORT=auto (GPT-5면 medium, 아니면 없음)
+# 자동 설정: LLM_REASONING_EFFORT=auto (GPT-5면 low, 아니면 없음)
 _reasoning_env = os.getenv("LLM_REASONING_EFFORT", "auto")
 
 
 def get_reasoning_effort() -> str:
     """모델에 따른 reasoning effort 반환"""
     if _reasoning_env == "auto":
-        # GPT-5 계열이면 medium, 아니면 빈 문자열
+        # GPT-5 계열이면 low, 아니면 빈 문자열
         if LLM_MODEL.startswith("gpt-5"):
-            return "medium"
+            return "low"
         return ""
     return _reasoning_env
 
@@ -29,8 +29,14 @@ LLM_REASONING_EFFORT = get_reasoning_effort()
 _llm_instance = None
 
 
+def reset_llm():
+    """LLM 인스턴스 리셋 (설정 변경 시 호출)"""
+    global _llm_instance
+    _llm_instance = None
+
+
 def get_llm() -> ChatOpenAI | None:
-    """ChatOpenAI 인스턴스 싱글톤"""
+    """ChatOpenAI 인스턴스 싱글톤 (일반 invoke용, 스트리밍 비활성화)"""
     global _llm_instance
     if _llm_instance is None:
         api_key = os.getenv("OPENAI_API_KEY")
@@ -42,6 +48,7 @@ def get_llm() -> ChatOpenAI | None:
                 model=LLM_MODEL,
                 api_key=api_key,
                 max_tokens=LLM_MAX_TOKENS,
+                streaming=True,  # 스트리밍 활성화
                 use_responses_api=use_responses,
                 output_version="responses/v1" if use_responses else None,
             )

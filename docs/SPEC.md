@@ -38,7 +38,7 @@ flowchart LR
 ## 2. 아키텍처
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph Frontend["Frontend (React + Lit)"]
         Chat["채팅 UI"]
         A2UI["A2UI Renderer"]
@@ -46,10 +46,10 @@ flowchart TB
     end
 
     subgraph Agent["Agent Server (Python)"]
-        LLM["LLM<br/>(Gemini)"]
-        Intent["의도 분석"]
+        LLM["LLM<br/>(OpenAI/Gemini)"]
+        Graph["LangGraph"]
         FormGen["폼 생성기"]
-        LLM --> Intent --> FormGen
+        LLM --> Graph --> FormGen
     end
 
     subgraph MockAPI["Mock API"]
@@ -59,7 +59,7 @@ flowchart TB
     end
 
     User((사용자)) <--> Chat
-    A2UI <-->|"WebSocket<br/>A2UI JSON"| Agent
+    A2UI <-->|"REST API<br/>A2UI JSON"| Agent
     FormGen -->|"검색 결과"| MockAPI
 ```
 
@@ -75,16 +75,17 @@ travel-booking-bot/
 │   │   │   ├── Chat/
 │   │   │   │   ├── ChatContainer.tsx
 │   │   │   │   ├── ChatInput.tsx
-│   │   │   │   └── MessageList.tsx
+│   │   │   │   ├── MessageList.tsx
+│   │   │   │   ├── A2UISurfaceView.tsx  # A2UI Surface 뷰
+│   │   │   │   └── ThinkingBox.tsx      # LLM Thinking UI
 │   │   │   └── A2UI/
 │   │   │       ├── A2UIRenderer.tsx
 │   │   │       └── LitWrapper.tsx
 │   │   ├── hooks/
 │   │   │   ├── useA2UI.ts
-│   │   │   ├── useChat.ts
-│   │   │   └── useWebSocket.ts
+│   │   │   └── useChat.ts
 │   │   ├── services/
-│   │   │   └── websocket.ts
+│   │   │   └── api.ts            # REST API 클라이언트
 │   │   ├── types/
 │   │   │   └── a2ui.d.ts
 │   │   ├── App.tsx
@@ -97,18 +98,24 @@ travel-booking-bot/
 │   ├── src/
 │   │   ├── main.py               # FastAPI 엔트리
 │   │   ├── agent.py              # LLM 에이전트
-│   │   ├── intent.py             # 의도 분석
-│   │   ├── forms/
-│   │   │   ├── __init__.py
-│   │   │   ├── base.py           # 기본 폼 생성기
-│   │   │   ├── flight.py         # 항공권 폼
-│   │   │   ├── hotel.py          # 호텔 폼
-│   │   │   ├── car.py            # 렌터카 폼
-│   │   │   └── package.py        # 패키지 폼
-│   │   └── mock_data/
-│   │       ├── airports.json     # 공항 목록
-│   │       ├── cities.json       # 도시 목록
-│   │       └── car_types.json    # 차종 목록
+│   │   ├── graph/                # LangGraph 정의
+│   │   │   ├── graph.py          # 그래프 구성
+│   │   │   └── state.py          # 상태 정의
+│   │   ├── nodes/                # 그래프 노드
+│   │   │   ├── intent.py         # 의도 분석
+│   │   │   ├── form.py           # 폼 생성
+│   │   │   ├── modify.py         # 폼 수정
+│   │   │   ├── action.py         # 액션 처리
+│   │   │   ├── clarify.py        # 명확화 질문
+│   │   │   ├── conversation.py   # 대화 처리
+│   │   │   ├── llm.py            # LLM 호출
+│   │   │   └── ui.py             # UI 메시지 생성
+│   │   └── forms/
+│   │       ├── base.py           # 기본 폼 생성기
+│   │       ├── flight.py         # 항공권 폼
+│   │       ├── hotel.py          # 호텔 폼
+│   │       ├── car.py            # 렌터카 폼
+│   │       └── results.py        # 검색 결과 폼
 │   ├── pyproject.toml
 │   └── .env.example
 │
@@ -129,10 +136,12 @@ travel-booking-bot/
 ```mermaid
 flowchart LR
     subgraph 왕복선택["왕복 선택 시"]
+        direction LR
         A1["출발일"] --> A2["귀국일 표시"]
     end
 
     subgraph 편도선택["편도 선택 시"]
+        direction LR
         B1["출발일"] --> B2["귀국일 숨김"]
     end
 ```
@@ -207,13 +216,19 @@ flowchart LR
 ### frontend/.env
 
 ```env
-VITE_WS_URL=ws://localhost:8000/ws/chat
+VITE_API_URL=http://localhost:8003
 ```
 
 ### agent/.env
 
 ```env
-GEMINI_API_KEY=your-gemini-api-key
+# OpenAI (기본)
+OPENAI_API_KEY=your-openai-api-key
+LLM_MODEL=gpt-4o-mini
+
+# 또는 Google Gemini
+# GEMINI_API_KEY=your-gemini-api-key
+# LLM_MODEL=gemini-2.0-flash
 ```
 
 ---

@@ -22,6 +22,7 @@ INTENT_PROMPT = """당신은 여행 예약/검색 의도 분석기입니다. 사
 - 렌터카 관련 요청: type: "car"
 - 패키지 여행 요청: type: "package"
 - **기존 폼 데이터 변경 요청**: type: "modify" (예: "좌석 비즈니스로 바꿔줘", "출발지 변경해줘")
+- **모호한 변경 요청**: type: "clarify" (예: "내일로 바꿔줘" - 어떤 날짜인지 불분명할 때)
 - 그 외: type: "unknown"
 
 ## 엔티티 추출 (있는 경우만)
@@ -59,6 +60,34 @@ INTENT_PROMPT = """당신은 여행 예약/검색 의도 분석기입니다. 사
 - "픽업 장소를 김포로 바꿔줘"
   → {{"type": "modify", "entities": {{"pickupLocation": "GMP"}}}}
 
+## clarify 타입 규칙 (모호한 변경 요청)
+**매우 중요**: clarify는 정말 모호한 경우에만 사용! 필드가 명시되어 있으면 절대 clarify 사용 금지!
+
+### clarify를 사용하면 안 되는 경우 (modify 사용):
+- "귀국일을 내일로 바꿔줘" → modify (필드 "귀국일"이 명시됨)
+- "출발일 1월 10일로 변경" → modify (필드 "출발일"이 명시됨)
+- "출발지를 인천으로" → modify (필드 "출발지"가 명시됨)
+- "성인 3명으로 바꿔줘" → modify (필드 "성인"이 명시됨)
+
+### clarify를 사용해야 하는 경우 (필드 없이 값만 있을 때):
+- "내일로 바꿔줘" → clarify (어떤 날짜인지 불분명)
+- "인천으로 바꿔줘" → clarify (출발지/도착지 중 무엇인지 불분명)
+- "3명으로 바꿔줘" → clarify (성인/아동/유아 중 무엇인지 불분명)
+
+예시 (항공권 flight-booking 폼 활성화 상태):
+- "내일로 바꿔줘" → {{"type": "clarify", "entities": {{"ambiguousValue": "내일", "candidateFields": ["departureDate", "returnDate"], "clarifyQuestion": "출발일과 귀국일 중 어떤 날짜를 변경할까요?"}}}}
+- "귀국일을 내일로 바꿔줘" → {{"type": "modify", "entities": {{"returnDate": "2026-01-03"}}}} (오늘이 1월 2일이면 내일은 1월 3일)
+- "출발일 1월 10일로" → {{"type": "modify", "entities": {{"departureDate": "2026-01-10"}}}}
+
+예시 (호텔 hotel-booking 폼 활성화 상태):
+- "내일" 또는 "내일로 바꿔줘" → {{"type": "clarify", "entities": {{"ambiguousValue": "내일", "candidateFields": ["checkinDate", "checkoutDate"], "clarifyQuestion": "체크인과 체크아웃 중 어떤 날짜를 변경할까요?"}}}}
+- "체크인을 내일로" → {{"type": "modify", "entities": {{"departureDate": "2026-01-03"}}}}
+- "체크아웃 1월 10일로" → {{"type": "modify", "entities": {{"returnDate": "2026-01-10"}}}}
+
+예시 (렌터카 car-rental 폼 활성화 상태):
+- "내일로 바꿔줘" → {{"type": "clarify", "entities": {{"ambiguousValue": "내일", "candidateFields": ["pickupDateTime", "dropoffDateTime"], "clarifyQuestion": "픽업일과 반납일 중 어떤 날짜를 변경할까요?"}}}}
+- "제주로 바꿔줘" → {{"type": "clarify", "entities": {{"ambiguousValue": "제주", "candidateFields": ["pickupLocation", "dropoffLocation"], "clarifyQuestion": "픽업 장소와 반납 장소 중 어디를 변경할까요?"}}}}
+
 ### 필드 매핑 (사용자 표현 → modifyField)
 - "출발지", "출발", "떠나는 곳" → departure
 - "도착지", "목적지", "가는 곳", "도시" → arrival
@@ -87,7 +116,24 @@ INTENT_PROMPT = """당신은 여행 예약/검색 의도 분석기입니다. 사
 
 ## 응답 형식 (JSON)
 반드시 아래 형식의 JSON만 출력하세요:
-{{"type": "flight|hotel|car|package|modify|unknown", "entities": {{"departure": "출발지 또는 null", "arrival": "도착지/도시 또는 null", "departureDate": "YYYY-MM-DD 또는 null", "returnDate": "YYYY-MM-DD 또는 null", "tripType": "roundtrip|oneway 또는 null", "adults": 숫자 또는 null, "children": 숫자 또는 null, "infants": 숫자 또는 null, "class": "economy|business|first 또는 null", "rooms": 숫자 또는 null, "breakfast": true|false 또는 null, "carType": "차종 또는 null", "insurance": ["basic","full","super"] 또는 null, "options": ["gps","childseat","wifi","etc"] 또는 null, "pickupLocation": "픽업장소 또는 null", "modifyField": "필드명 또는 null", "modifyValue": "변경값 또는 null"}}}}
+{{"type": "flight|hotel|car|package|modify|clarify|unknown", "entities": {{"departure": "출발지 또는 null", "arrival": "도착지/도시 또는 null", "departureDate": "YYYY-MM-DD 또는 null", "returnDate": "YYYY-MM-DD 또는 null", "tripType": "roundtrip|oneway 또는 null", "adults": 숫자 또는 null, "children": 숫자 또는 null, "infants": 숫자 또는 null, "class": "economy|business|first 또는 null", "rooms": 숫자 또는 null, "breakfast": true|false 또는 null, "carType": "차종 또는 null", "insurance": ["basic","full","super"] 또는 null, "options": ["gps","childseat","wifi","etc"] 또는 null, "pickupLocation": "픽업장소 또는 null", "modifyField": "필드명 또는 null", "modifyValue": "변경값 또는 null", "ambiguousValue": "모호한 값 또는 null", "candidateFields": ["가능한필드1", "가능한필드2"] 또는 null, "clarifyQuestion": "명확화 질문 또는 null"}}}}
+
+## 대화 맥락 기반 처리 규칙
+**중요**: 이전 대화에서 clarify 질문을 했고, 사용자가 그에 대한 답변을 했다면:
+- 이전 대화에서 언급된 값(날짜, 장소 등)과 사용자 답변(필드명)을 결합하여 modify로 처리
+- 예: 이전 "내일로 바꿔줘" → 질문 "출발일과 귀국일 중?" → 답변 "귀국일"
+  → modify로 귀국일을 내일(이전 언급된 값)로 변경
+
+**매우 중요**: 폼 전환 시 맥락 처리 규칙
+- 여행 목적지, 날짜 등 **공통 정보는 폼 간에 공유 가능**
+  - 예: "후쿠오카 비행기 예약" → "호텔도 예약해줘" → 후쿠오카 호텔로 이해
+- 단, **이전 폼의 clarify 질문/답변 맥락은 새 폼에 적용하지 않음**
+  - 예: 항공권에서 "내일로 바꿔줘" → "출발일/귀국일 중?" 질문 후
+  - 호텔로 전환 → "내일"만 입력하면 항공권 맥락 무시, 호텔 기준으로 새로 질문
+- 폼 필드명은 Surface에 맞게 사용:
+  - flight: 출발일/귀국일, 출발지/도착지
+  - hotel: 체크인/체크아웃, 도시
+  - car: 픽업일시/반납일시, 픽업장소/반납장소
 
 ## 현재 날짜 정보
 오늘 날짜: {today}
@@ -104,6 +150,7 @@ def intent_node(state: TravelState) -> TravelState:
     user_message = state.get("user_message", "")
     current_surface_id = state.get("current_surface_id", "")
     current_data = state.get("current_data", {})
+    chat_history = state.get("chat_history", [])
 
     if not user_message:
         return {"intent_type": "unknown", "entities": {}}
@@ -117,6 +164,7 @@ def intent_node(state: TravelState) -> TravelState:
     try:
         print(f"[Intent Node] Starting analysis for: {user_message}")
         print(f"[Intent Node] Active Surface: {current_surface_id}, Data: {current_data}")
+        print(f"[Intent Node] Chat history length: {len(chat_history)}")
 
         # 오늘 날짜를 프롬프트에 포함
         today = date.today().isoformat()
@@ -127,7 +175,17 @@ def intent_node(state: TravelState) -> TravelState:
         else:
             surface_context = "활성 Surface 없음 (폼 수정 불가)"
 
-        prompt = INTENT_PROMPT.format(today=today, surface_context=surface_context)
+        # 최근 대화 히스토리 컨텍스트 (최근 6개 메시지)
+        recent_history = chat_history[-6:] if len(chat_history) > 6 else chat_history
+        history_context = ""
+        if recent_history:
+            history_lines = []
+            for msg in recent_history:
+                role = "사용자" if msg.type == "human" else "어시스턴트"
+                history_lines.append(f"{role}: {msg.content}")
+            history_context = "\n## 최근 대화 히스토리\n" + "\n".join(history_lines)
+
+        prompt = INTENT_PROMPT.format(today=today, surface_context=surface_context) + history_context
 
         messages = [
             SystemMessage(content=prompt),
@@ -137,9 +195,13 @@ def intent_node(state: TravelState) -> TravelState:
         print(f"[Intent Node] Calling LLM...")
         response = llm.invoke(messages)
 
-        # 디버깅: 응답 구조 확인
-        print(f"[Intent Node] Response type: {type(response.content)}")
+        # 디버깅: 원본 응답 전체 출력
+        print(f"[Intent Node] Raw response: {response}")
+        print(f"[Intent Node] Response type: {type(response)}")
+        print(f"[Intent Node] Response content type: {type(response.content)}")
         print(f"[Intent Node] Response content: {response.content}")
+        if hasattr(response, "additional_kwargs"):
+            print(f"[Intent Node] additional_kwargs: {response.additional_kwargs}")
 
         # content가 리스트인 경우 (responses/v1 형식) 텍스트 추출
         content = response.content
