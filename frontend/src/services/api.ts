@@ -30,6 +30,14 @@ export interface ChatResponse {
   error?: string;
 }
 
+// SSE 스트리밍 이벤트 타입 (Gemini 스타일)
+export type StreamEvent =
+  | { type: "status"; text: string }           // 상태 변경 (예: "검색 중...", "분석 중...")
+  | { type: "thought"; text: string }          // 사고 로그 추가
+  | { type: "answer"; text: string }           // 답변 토큰 (스트리밍)
+  | { type: "done"; messages: unknown[]; reasoning?: string }  // 완료
+  | { type: "error"; error: string };
+
 class ApiService {
   private baseUrl: string;
   private clientId: string;
@@ -117,6 +125,80 @@ class ApiService {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
       };
+    }
+  }
+
+  /**
+   * SSE 스트리밍으로 메시지 전송
+   */
+  async sendMessageStream(
+    request: ChatRequest,
+    onEvent: (event: StreamEvent) => void
+  ): Promise<void> {
+    // 이전 요청이 있으면 취소
+    this.abortCurrentRequest();
+    this.currentAbortController = new AbortController();
+
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Client-ID": this.clientId,
+        },
+        body: JSON.stringify(request),
+        signal: this.currentAbortController.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // SSE 이벤트 파싱 (data: {...}\n\n 형식)
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || ""; // 마지막 불완전한 청크는 버퍼에 유지
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const jsonStr = line.slice(6); // "data: " 제거
+              const event = JSON.parse(jsonStr) as StreamEvent;
+              onEvent(event);
+            } catch (e) {
+              console.error("Failed to parse SSE event:", e, line);
+            }
+          }
+        }
+      }
+
+      this.currentAbortController = null;
+    } catch (error) {
+      this.currentAbortController = null;
+
+      if (error instanceof Error && error.name === "AbortError") {
+        onEvent({ type: "error", error: "aborted" });
+        return;
+      }
+
+      console.error("Stream request failed:", error);
+      onEvent({
+        type: "error",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
     }
   }
 

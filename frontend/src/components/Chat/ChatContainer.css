@@ -58,7 +58,7 @@
 /* 메시지 영역 */
 .messages-area {
   flex: 1;
-  padding: 16px;
+  padding: 16px 16px 24px 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -254,67 +254,6 @@
   color: #999;
 }
 
-/* Thinking Block (GPT-5 reasoning) */
-.thinking-block {
-  margin-bottom: 8px;
-}
-
-.thinking-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  padding: 4px 8px;
-  margin: -4px -8px 4px -8px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  color: #666;
-  transition: background 0.2s;
-}
-
-.thinking-toggle:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.thinking-icon {
-  color: #1976d2;
-  font-size: 14px;
-}
-
-.thinking-label {
-  font-weight: 500;
-}
-
-.thinking-arrow {
-  font-size: 10px;
-  transition: transform 0.2s;
-}
-
-.thinking-arrow.expanded {
-  transform: rotate(180deg);
-}
-
-.thinking-content {
-  padding: 8px 12px;
-  margin: 4px 0 8px 0;
-  background: rgba(25, 118, 210, 0.08);
-  border-left: 3px solid #1976d2;
-  border-radius: 0 8px 8px 0;
-  font-size: 13px;
-  color: #555;
-  animation: fadeIn 0.2s ease;
-}
-
-.thinking-content p {
-  margin: 0 0 6px 0;
-}
-
-.thinking-content p:last-child {
-  margin-bottom: 0;
-}
-
 /* 에러 메시지 */
 .error-message {
   display: flex;
@@ -373,46 +312,10 @@
   }
 }
 
-/* Thinking 애니메이션 (로딩) */
-.agent-message.thinking {
-  padding: 14px 20px;
-}
-
-.thinking-dots {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.thinking-dots span {
-  width: 8px;
-  height: 8px;
-  background: #999;
-  border-radius: 50%;
-  animation: thinking-bounce 1.4s infinite ease-in-out both;
-}
-
-.thinking-dots span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.thinking-dots span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-.thinking-dots span:nth-child(3) {
-  animation-delay: 0s;
-}
-
-@keyframes thinking-bounce {
-  0%, 80%, 100% {
-    transform: scale(0.6);
-    opacity: 0.5;
-  }
-  40% {
-    transform: scale(1);
-    opacity: 1;
-  }
+/* 스트리밍 상태 */
+.agent-message.streaming {
+  background: #f5f5f5;
+  padding: 12px 16px;
 }
 
 /* UI 패널 (왼쪽) */

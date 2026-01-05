@@ -10,33 +10,9 @@ import remarkGfm from "remark-gfm";
 import { useChat } from "../../hooks/useChat";
 import { ChatInput, type ChatInputHandle } from "./ChatInput";
 import { A2UISurfaceView } from "./A2UISurfaceView";
+import { ThinkingBox } from "./ThinkingBox";
 import type { ChatMessage } from "../../types/a2ui";
 import "./ChatContainer.css";
-
-// Thinking 컴포넌트 (접을 수 있는 reasoning 표시)
-function ThinkingBlock({ reasoning }: { reasoning: string }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  return (
-    <div className="thinking-block">
-      <button
-        className="thinking-toggle"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <span className="thinking-icon">✦</span>
-        <span className="thinking-label">Thinking</span>
-        <span className={`thinking-arrow ${isExpanded ? "expanded" : ""}`}>
-          ▼
-        </span>
-      </button>
-      {isExpanded && (
-        <div className="thinking-content">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // 메시지 아이템 컴포넌트
 function MessageItem({ message }: { message: ChatMessage }) {
@@ -48,10 +24,15 @@ function MessageItem({ message }: { message: ChatMessage }) {
     );
   }
 
+  // 에이전트 메시지: reasoning이 있으면 ThinkingBox(완료 상태)로 표시
   return (
     <div className="agent-message">
       {message.reasoning && (
-        <ThinkingBlock reasoning={message.reasoning} />
+        <ThinkingBox
+          isThinking={false}
+          currentStatus=""
+          thinkingLogs={message.reasoning.split("\n").filter((line) => line.trim())}
+        />
       )}
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
     </div>
@@ -59,7 +40,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
 }
 
 export function ChatContainer() {
-  const { messages, isLoading, error, sendMessage, sendAction, abortRequest, clearError, a2ui } = useChat();
+  const { messages, isLoading, error, streaming, sendMessage, sendAction, abortRequest, clearError, a2ui } = useChat();
   const [isClosing, setIsClosing] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -161,14 +142,23 @@ export function ChatContainer() {
                     </button>
                   </div>
                 )}
-                {/* Thinking 애니메이션 */}
+                {/* 스트리밍 중 표시 (Gemini 스타일) */}
                 {isLoading && (
-                  <div className="agent-message thinking">
-                    <div className="thinking-dots">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
+                  <div className="agent-message streaming">
+                    {/* Thinking 중이거나 로그가 있으면 ThinkingBox 표시 */}
+                    {(streaming.isThinking || streaming.thinkingLogs.length > 0) && (
+                      <ThinkingBox
+                        isThinking={streaming.isThinking}
+                        currentStatus={streaming.currentStatus}
+                        thinkingLogs={streaming.thinkingLogs}
+                      />
+                    )}
+                    {/* 답변 스트리밍 */}
+                    {streaming.answerText && (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {streaming.answerText}
+                      </ReactMarkdown>
+                    )}
                   </div>
                 )}
               </>

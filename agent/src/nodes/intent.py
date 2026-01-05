@@ -195,9 +195,13 @@ def intent_node(state: TravelState) -> TravelState:
         print(f"[Intent Node] Calling LLM...")
         response = llm.invoke(messages)
 
-        # 디버깅: 응답 구조 확인
-        print(f"[Intent Node] Response type: {type(response.content)}")
+        # 디버깅: 원본 응답 전체 출력
+        print(f"[Intent Node] Raw response: {response}")
+        print(f"[Intent Node] Response type: {type(response)}")
+        print(f"[Intent Node] Response content type: {type(response.content)}")
         print(f"[Intent Node] Response content: {response.content}")
+        if hasattr(response, "additional_kwargs"):
+            print(f"[Intent Node] additional_kwargs: {response.additional_kwargs}")
 
         # content가 리스트인 경우 (responses/v1 형식) 텍스트 추출
         content = response.content

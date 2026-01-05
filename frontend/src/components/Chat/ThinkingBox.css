@@ -1,0 +1,115 @@
+/* ThinkingBox - Gemini 스타일 Thinking UI */
+
+.thinking-box {
+  font-size: 14px;
+  color: #555;
+}
+
+.thinking-sparkle {
+  color: #e5a54b;
+  font-size: 14px;
+}
+
+.thinking-status {
+  color: #666;
+  font-weight: 400;
+}
+
+.thinking-dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 4px;
+}
+
+.thinking-dots span {
+  width: 5px;
+  height: 5px;
+  background: #999;
+  border-radius: 50%;
+  animation: dot-bounce 1.4s infinite ease-in-out both;
+}
+
+.thinking-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.thinking-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.thinking-dots span:nth-child(3) {
+  animation-delay: 0s;
+}
+
+/* 완료 후 토글 버튼 */
+.thinking-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  transition: color 0.2s;
+}
+
+.thinking-toggle:hover {
+  color: #333;
+}
+
+.thinking-label {
+  font-weight: 400;
+  color: inherit;
+}
+
+.thinking-arrow {
+  font-size: 16px;
+  font-weight: 300;
+  transition: transform 0.2s;
+  color: #999;
+}
+
+.thinking-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+/* 사고 로그 (아코디언 내용) */
+.thinking-logs {
+  margin-top: 8px;
+  padding-left: 18px;
+  border-left: 2px solid #e0e0e0;
+}
+
+.thinking-log-item {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.thinking-log-item:last-child {
+  border-bottom: none;
+}
+
+.thinking-log-item p {
+  margin: 0 0 4px 0;
+}
+
+.thinking-log-item p:last-child {
+  margin-bottom: 0;
+}
+
+/* 애니메이션 */
+@keyframes dot-bounce {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

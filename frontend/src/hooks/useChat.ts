@@ -1,11 +1,19 @@
 /**
- * 채팅 상태 관리 훅 (REST API 버전)
+ * 채팅 상태 관리 훅 (Gemini 스타일 Thinking UI)
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { getApiService } from "../services/api";
+import { getApiService, type StreamEvent } from "../services/api";
 import { useA2UI } from "./useA2UI";
 import type { ChatMessage, A2UIMessage, UserActionMessage, AssistantMessage } from "../types/a2ui";
+
+// Gemini 스타일 스트리밍 상태
+export interface StreamingState {
+  isThinking: boolean;          // 생각 중인지 여부
+  currentStatus: string;        // 현재 상태 텍스트 (동적으로 변함)
+  thinkingLogs: string[];       // 사고 로그 배열 (아코디언에 표시)
+  answerText: string;           // 답변 텍스트 (스트리밍 누적)
+}
 
 // UUID 생성 함수 (crypto.randomUUID 폴백)
 function generateUUID(): string {
@@ -24,13 +32,26 @@ function isAssistantMessage(msg: A2UIMessage): msg is AssistantMessage {
   return "assistantMessage" in msg;
 }
 
+const initialStreamingState: StreamingState = {
+  isThinking: false,
+  currentStatus: "",
+  thinkingLogs: [],
+  answerText: "",
+};
+
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [streaming, setStreaming] = useState<StreamingState>(initialStreamingState);
   const a2ui = useA2UI();
   const api = getApiService();
   const initializedRef = useRef(false);
+
+  // 스트리밍 상태 리셋
+  const resetStreaming = useCallback(() => {
+    setStreaming(initialStreamingState);
+  }, []);
 
   // 에러 클리어
   const clearError = useCallback(() => {
@@ -101,7 +122,55 @@ export function useChat() {
     loadInitialUI();
   }, [api, a2ui, processServerMessages]);
 
-  // 텍스트 메시지 전송
+  // 스트리밍 이벤트 핸들러 (Gemini 스타일)
+  const handleStreamEvent = useCallback((event: StreamEvent) => {
+    switch (event.type) {
+      case "status":
+        // 상태 텍스트 변경 (동적 제목)
+        setStreaming((prev) => ({
+          ...prev,
+          isThinking: true,
+          currentStatus: event.text,
+        }));
+        break;
+
+      case "thought":
+        // 사고 로그 추가 (아코디언 내용)
+        setStreaming((prev) => ({
+          ...prev,
+          thinkingLogs: [...prev.thinkingLogs, event.text],
+        }));
+        break;
+
+      case "answer":
+        // 답변 토큰 누적 (스트리밍)
+        setStreaming((prev) => ({
+          ...prev,
+          isThinking: false,  // 답변이 오면 thinking 종료
+          answerText: prev.answerText + event.text,
+        }));
+        break;
+
+      case "done":
+        // 최종 메시지 처리
+        if (event.messages && Array.isArray(event.messages)) {
+          processServerMessages(event.messages as A2UIMessage[]);
+        }
+        resetStreaming();
+        setIsLoading(false);
+        break;
+
+      case "error":
+        if (event.error !== "aborted") {
+          setError("메시지 전송에 실패했습니다. 다시 시도해주세요.");
+        }
+        resetStreaming();
+        setIsLoading(false);
+        break;
+    }
+  }, [processServerMessages, resetStreaming]);
+
+  // 텍스트 메시지 전송 (스트리밍)
   const sendMessage = useCallback(
     async (text: string) => {
       // 사용자 메시지 추가
@@ -113,41 +182,22 @@ export function useChat() {
       };
       setMessages((prev) => [...prev, userMessage]);
       setError(null);
-
+      resetStreaming();
       setIsLoading(true);
-      try {
-        // 활성 Surface의 dataModel을 함께 전송 (폼 데이터 유지용)
-        const currentSurface = a2ui.activeSurface;
-        const payload: { text: string; currentData?: Record<string, unknown>; surfaceId?: string } = { text };
 
-        if (currentSurface) {
-          payload.currentData = currentSurface.dataModel;
-          payload.surfaceId = currentSurface.surfaceId;
-        }
+      // 활성 Surface의 dataModel을 함께 전송 (폼 데이터 유지용)
+      const currentSurface = a2ui.activeSurface;
+      const payload: { text: string; currentData?: Record<string, unknown>; surfaceId?: string } = { text };
 
-        const response = await api.sendMessage(payload);
-
-        if (response.success && response.data) {
-          const data = response.data as { messages?: A2UIMessage[] };
-
-          // 여러 메시지 처리 (assistantMessage 포함)
-          if (data.messages && Array.isArray(data.messages)) {
-            processServerMessages(data.messages);
-          }
-        } else if (!response.success) {
-          // 사용자가 취소한 경우는 에러로 처리하지 않음
-          if (response.error !== "aborted") {
-            setError("메시지 전송에 실패했습니다. 다시 시도해주세요.");
-          }
-        }
-      } catch (err) {
-        console.error("Failed to send message:", err);
-        setError("메시지 전송에 실패했습니다. 다시 시도해주세요.");
-      } finally {
-        setIsLoading(false);
+      if (currentSurface) {
+        payload.currentData = currentSurface.dataModel;
+        payload.surfaceId = currentSurface.surfaceId;
       }
+
+      // SSE 스트리밍으로 전송
+      await api.sendMessageStream(payload, handleStreamEvent);
     },
-    [api, processServerMessages, a2ui.activeSurface]
+    [api, handleStreamEvent, a2ui.activeSurface, resetStreaming]
   );
 
   // userAction 전송
@@ -193,6 +243,7 @@ export function useChat() {
     messages,
     isLoading,
     error,
+    streaming,
     sendMessage,
     sendAction,
     abortRequest,
