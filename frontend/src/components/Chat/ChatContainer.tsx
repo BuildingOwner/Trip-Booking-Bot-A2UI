@@ -8,8 +8,9 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useChat } from "../../hooks/useChat";
+import { useA2UIActions } from "../../hooks/useA2UIActions";
 import { ChatInput, type ChatInputHandle } from "./ChatInput";
-import { A2UISurfaceView } from "./A2UISurfaceView";
+import { A2UISurfaceRenderer } from "./A2UISurfaceView";
 import { ThinkingBox } from "./ThinkingBox";
 import type { ChatMessage } from "../../types/a2ui";
 import "./ChatContainer.css";
@@ -41,6 +42,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
 
 export function ChatContainer() {
   const { messages, isLoading, error, streaming, sendMessage, sendAction, abortRequest, clearError, a2ui } = useChat();
+  const { handleAction } = useA2UIActions({ a2ui, sendAction });
   const [isClosing, setIsClosing] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -78,26 +80,6 @@ export function ChatContainer() {
     }, 500); // 애니메이션 시간과 동일
   };
 
-  // 액션 핸들러 (클라이언트 처리 + 서버 전송)
-  const handleAction = (
-    surfaceId: string,
-    componentId: string,
-    action: string,
-    data?: Record<string, unknown>
-  ) => {
-    // swap-route: 출발지/도착지 교환 (클라이언트에서 직접 처리)
-    if (action === "swap-route") {
-      const departure = a2ui.getBoundValue(surfaceId, "/flight/departure");
-      const arrival = a2ui.getBoundValue(surfaceId, "/flight/arrival");
-      a2ui.updateDataValue(surfaceId, "/flight/departure", arrival || "");
-      a2ui.updateDataValue(surfaceId, "/flight/arrival", departure || "");
-      return;
-    }
-
-    // 기타 액션은 서버로 전송
-    sendAction(surfaceId, componentId, action, data);
-  };
-
   return (
     <div className="app-container">
       <header className="app-header">
@@ -115,7 +97,11 @@ export function ChatContainer() {
             >
               ✕
             </button>
-            <A2UISurfaceView a2ui={a2ui} onAction={handleAction} />
+            <A2UISurfaceRenderer
+              surface={a2ui.activeSurface}
+              onAction={handleAction}
+              onValueChange={a2ui.updateDataValue}
+            />
           </div>
         )}
 

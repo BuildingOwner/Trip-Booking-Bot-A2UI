@@ -1,0 +1,145 @@
+{
+  "id": "car",
+  "surfaceId": "car-rental",
+  "catalogId": "travel-booking",
+  "label": "렌터카",
+  "icon": "car",
+  "components": [
+    {
+      "id": "root",
+      "component": "Column",
+      "children": ["header", "same-location", "pickup", "dropoff", "dates", "car-type", "insurance", "options", "actions"]
+    },
+    {
+      "id": "header",
+      "component": "Text",
+      "text": "렌터카 검색",
+      "style": "headline"
+    },
+    {
+      "id": "same-location",
+      "component": "CheckBox",
+      "label": "동일 장소 반납",
+      "binding": "/car/sameLocation"
+    },
+    {
+      "id": "pickup",
+      "component": "ChoicePicker",
+      "label": "픽업 장소",
+      "options": "/locations",
+      "binding": "/car/pickupLocation",
+      "searchable": true
+    },
+    {
+      "id": "dropoff",
+      "component": "ChoicePicker",
+      "label": "반납 장소",
+      "options": "/locations",
+      "binding": "/car/dropoffLocation",
+      "searchable": true,
+      "visible": "/car/sameLocation == false"
+    },
+    {
+      "id": "dates",
+      "component": "Row",
+      "children": ["pickup-datetime", "dropoff-datetime"]
+    },
+    {
+      "id": "pickup-datetime",
+      "component": "DateTimeInput",
+      "label": "픽업 일시",
+      "mode": "datetime",
+      "binding": "/car/pickupDateTime",
+      "minDate": "today"
+    },
+    {
+      "id": "dropoff-datetime",
+      "component": "DateTimeInput",
+      "label": "반납 일시",
+      "mode": "datetime",
+      "binding": "/car/dropoffDateTime",
+      "minDate": "/car/pickupDateTime"
+    },
+    {
+      "id": "car-type",
+      "component": "ChoicePicker",
+      "label": "차종",
+      "options": [
+        {"value": "compact", "label": "소형"},
+        {"value": "mid", "label": "중형"},
+        {"value": "full", "label": "대형"},
+        {"value": "suv", "label": "SUV"},
+        {"value": "van", "label": "밴/미니밴"},
+        {"value": "luxury", "label": "프리미엄"}
+      ],
+      "binding": "/car/type"
+    },
+    {
+      "id": "insurance",
+      "component": "CheckboxGroup",
+      "label": "보험",
+      "options": [
+        {"value": "basic", "label": "기본 보험 (자차)"},
+        {"value": "full", "label": "완전 자차 보험"},
+        {"value": "super", "label": "슈퍼 보험 (면책금 0원)"}
+      ],
+      "binding": "/car/insurance"
+    },
+    {
+      "id": "options",
+      "component": "CheckboxGroup",
+      "label": "추가 옵션",
+      "options": [
+        {"value": "gps", "label": "GPS 네비게이션"},
+        {"value": "childseat", "label": "유아용 카시트"},
+        {"value": "wifi", "label": "와이파이"},
+        {"value": "etc", "label": "하이패스 단말기"}
+      ],
+      "binding": "/car/options"
+    },
+    {
+      "id": "actions",
+      "component": "Row",
+      "children": ["back-btn", "search-btn"]
+    },
+    {
+      "id": "back-btn",
+      "component": "Button",
+      "label": "이전",
+      "variant": "outlined",
+      "action": "back"
+    },
+    {
+      "id": "search-btn",
+      "component": "Button",
+      "label": "렌터카 검색",
+      "variant": "filled",
+      "action": "search-cars"
+    }
+  ],
+  "dataModel": {
+    "car": {
+      "sameLocation": true,
+      "pickupLocation": "",
+      "dropoffLocation": "",
+      "pickupDateTime": "",
+      "dropoffDateTime": "",
+      "type": "mid",
+      "insurance": [],
+      "options": []
+    }
+  },
+  "options": {
+    "locations": [
+      {"value": "ICN", "label": "인천공항"},
+      {"value": "GMP", "label": "김포공항"},
+      {"value": "CJU", "label": "제주공항"},
+      {"value": "JEJU_CITY", "label": "제주시내"},
+      {"value": "SEOGWIPO", "label": "서귀포"}
+    ]
+  },
+  "entityMapping": {
+    "departureDate": "car.pickupDateTime",
+    "returnDate": "car.dropoffDateTime"
+  }
+}
