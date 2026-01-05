@@ -1,23 +1,23 @@
 /**
- * A2UI Surface 뷰 컴포넌트
- * useA2UI 훅의 상태를 받아서 Surface를 렌더링
+ * A2UI Surface 렌더러 컴포넌트
+ * Surface 데이터를 받아서 순수하게 UI만 렌더링
+ *
+ * 책임: 렌더링만 담당 (SRP)
+ * 액션 처리는 useA2UIActions 훅에서 담당
  */
 
 import type { Surface } from "../../hooks/useA2UI";
 import type { A2UIComponent } from "../../types/a2ui";
 import "../../components/A2UI/A2UIRenderer.css";
 
-interface A2UISurfaceViewProps {
-  a2ui: {
-    activeSurface: Surface | null;
-    getBoundValue: (surfaceId: string, binding: string) => unknown;
-    updateDataValue: (surfaceId: string, path: string, value: unknown) => void;
-  };
+interface A2UISurfaceRendererProps {
+  surface: Surface | null;
   onAction: (surfaceId: string, componentId: string, action: string, data?: Record<string, unknown>) => void;
+  onValueChange: (surfaceId: string, path: string, value: unknown) => void;
 }
 
-export function A2UISurfaceView({ a2ui, onAction }: A2UISurfaceViewProps) {
-  const { activeSurface } = a2ui;
+export function A2UISurfaceRenderer({ surface, onAction, onValueChange }: A2UISurfaceRendererProps) {
+  const activeSurface = surface;
 
   if (!activeSurface) {
     return (
@@ -39,10 +39,31 @@ export function A2UISurfaceView({ a2ui, onAction }: A2UISurfaceViewProps) {
         surface={activeSurface}
         onAction={onAction}
         onValueChange={(path, value) => {
-          a2ui.updateDataValue(activeSurface.surfaceId, path, value);
+          onValueChange(activeSurface.surfaceId, path, value);
         }}
       />
     </div>
+  );
+}
+
+// 하위 호환성을 위한 래퍼 (deprecated)
+interface A2UISurfaceViewProps {
+  a2ui: {
+    activeSurface: Surface | null;
+    getBoundValue: (surfaceId: string, binding: string) => unknown;
+    updateDataValue: (surfaceId: string, path: string, value: unknown) => void;
+  };
+  onAction: (surfaceId: string, componentId: string, action: string, data?: Record<string, unknown>) => void;
+}
+
+/** @deprecated A2UISurfaceRenderer + useA2UIActions 조합으로 대체 */
+export function A2UISurfaceView({ a2ui, onAction }: A2UISurfaceViewProps) {
+  return (
+    <A2UISurfaceRenderer
+      surface={a2ui.activeSurface}
+      onAction={onAction}
+      onValueChange={a2ui.updateDataValue}
+    />
   );
 }
 

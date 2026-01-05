@@ -1,0 +1,140 @@
+{
+  "id": "hotel",
+  "surfaceId": "hotel-booking",
+  "catalogId": "travel-booking",
+  "label": "호텔",
+  "icon": "hotel",
+  "components": [
+    {
+      "id": "root",
+      "component": "Column",
+      "children": ["header", "destination", "dates", "rooms", "guests", "options", "actions"]
+    },
+    {
+      "id": "header",
+      "component": "Text",
+      "text": "호텔 검색",
+      "style": "headline"
+    },
+    {
+      "id": "destination",
+      "component": "ChoicePicker",
+      "label": "도시",
+      "options": "/cities",
+      "binding": "/hotel/destination",
+      "searchable": true
+    },
+    {
+      "id": "dates",
+      "component": "Row",
+      "children": ["checkin", "checkout"]
+    },
+    {
+      "id": "checkin",
+      "component": "DateTimeInput",
+      "label": "체크인",
+      "mode": "date",
+      "binding": "/hotel/checkinDate",
+      "minDate": "today"
+    },
+    {
+      "id": "checkout",
+      "component": "DateTimeInput",
+      "label": "체크아웃",
+      "mode": "date",
+      "binding": "/hotel/checkoutDate",
+      "minDate": "/hotel/checkinDate"
+    },
+    {
+      "id": "rooms",
+      "component": "Stepper",
+      "label": "객실 수",
+      "min": 1,
+      "max": 10,
+      "binding": "/hotel/rooms"
+    },
+    {
+      "id": "guests",
+      "component": "Row",
+      "children": ["adults", "children"]
+    },
+    {
+      "id": "adults",
+      "component": "Stepper",
+      "label": "성인",
+      "min": 1,
+      "max": 10,
+      "binding": "/hotel/guests/adults"
+    },
+    {
+      "id": "children",
+      "component": "Stepper",
+      "label": "아동",
+      "min": 0,
+      "max": 10,
+      "binding": "/hotel/guests/children"
+    },
+    {
+      "id": "options",
+      "component": "CheckBox",
+      "label": "조식 포함",
+      "binding": "/hotel/breakfast"
+    },
+    {
+      "id": "actions",
+      "component": "Row",
+      "children": ["back-btn", "search-btn"]
+    },
+    {
+      "id": "back-btn",
+      "component": "Button",
+      "label": "이전",
+      "variant": "outlined",
+      "action": "back"
+    },
+    {
+      "id": "search-btn",
+      "component": "Button",
+      "label": "호텔 검색",
+      "variant": "filled",
+      "action": "search-hotels"
+    }
+  ],
+  "dataModel": {
+    "hotel": {
+      "destination": "",
+      "checkinDate": "",
+      "checkoutDate": "",
+      "rooms": 1,
+      "guests": {
+        "adults": 2,
+        "children": 0
+      },
+      "breakfast": false
+    }
+  },
+  "options": {
+    "cities": [
+      {"value": "SEL", "label": "서울"},
+      {"value": "PUS", "label": "부산"},
+      {"value": "CJU", "label": "제주"},
+      {"value": "TYO", "label": "도쿄"},
+      {"value": "OSA", "label": "오사카"},
+      {"value": "FUK", "label": "후쿠오카"},
+      {"value": "BKK", "label": "방콕"},
+      {"value": "SGN", "label": "호치민"},
+      {"value": "HAN", "label": "하노이"},
+      {"value": "SIN", "label": "싱가포르"},
+      {"value": "HKG", "label": "홍콩"}
+    ]
+  },
+  "entityMapping": {
+    "arrival": "hotel.destination",
+    "departureDate": "hotel.checkinDate",
+    "returnDate": "hotel.checkoutDate",
+    "adults": "hotel.guests.adults",
+    "children": "hotel.guests.children",
+    "rooms": "hotel.rooms",
+    "breakfast": "hotel.breakfast"
+  }
+}
