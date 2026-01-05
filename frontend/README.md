@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
+# A2UI 여행 예약 봇 - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite 기반 프론트엔드
 
-Currently, two official plugins are available:
+## 기술 스택
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** + TypeScript
+- **Vite** - 빌드 도구
+- **@a2ui/lit** - A2UI 렌더러 (Web Components)
 
-## React Compiler
+## 프로젝트 구조
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── components/
+│   ├── Chat/           # 채팅 UI 컴포넌트
+│   │   ├── ChatContainer.tsx
+│   │   ├── ChatInput.tsx
+│   │   ├── MessageList.tsx
+│   │   ├── A2UISurfaceView.tsx
+│   │   └── ThinkingBox.tsx
+│   └── A2UI/           # A2UI 렌더러
+│       ├── A2UIRenderer.tsx
+│       └── LitWrapper.tsx
+├── hooks/
+│   ├── useChat.ts      # 채팅 상태 관리
+│   └── useA2UI.ts      # A2UI Surface 관리
+├── services/
+│   └── api.ts          # REST API 클라이언트
+├── types/
+│   └── a2ui.d.ts       # A2UI 타입 정의
+├── App.tsx
+└── main.tsx
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 실행 방법
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+# 의존성 설치
+npm install
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 개발 서버 (http://localhost:5173)
+npm run dev
+
+# 프로덕션 빌드
+npm run build
+
+# 린트
+npm run lint
+```
+
+## 환경 변수
+
+`.env` 파일 생성:
+
+```env
+VITE_API_URL=http://localhost:8003
 ```
